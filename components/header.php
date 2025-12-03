@@ -3,8 +3,12 @@
 $user_fullname = isset($_SESSION['full_name']) ? $_SESSION['full_name'] : 'User';
 $user_role = 'Nhân viên';
 if(isset($_SESSION['role_id'])) {
-    if($_SESSION['role_id'] == 1) $user_role = 'Quản trị viên';
-    if($_SESSION['role_id'] == 2) $user_role = 'Quản lý';
+    switch($_SESSION['role_id']) {
+        case 1: $user_role = 'Quản trị viên'; break;
+        case 2: $user_role = 'Quản lý'; break;
+        case 3: $user_role = 'Nhân viên bán hàng'; break;
+        case 4: $user_role = 'Nhân viên kho'; break;
+    }
 }
 
 $avatar_img = isset($_SESSION['avatar']) ? $_SESSION['avatar'] : 'default-avatar.png';

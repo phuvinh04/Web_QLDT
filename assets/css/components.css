@@ -2,6 +2,22 @@
    REUSABLE COMPONENTS - 2026 EDITION
    =================================== */
 
+/* CSS Variables for components */
+:root {
+  --bg-card: #ffffff;
+  --bg-secondary: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent-violet: #8b5cf6;
+  --accent-rose: #f43f5e;
+  --accent-emerald: #10b981;
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --transition-base: 0.3s ease;
+  --transition-fast: 0.15s ease;
+}
+
 /* ===== PRODUCT CARD ===== */
 .product-grid {
   display: grid;
