@@ -300,6 +300,7 @@ body {
 .stat-icon.green { background: #d1fae5; color: #047857; }
 .stat-icon.orange { background: #fed7aa; color: #b45309; }
 .stat-icon.red { background: #fecaca; color: #b91c1c; }
+.stat-icon.purple { background: #ede9fe; color: #7c3aed; }
 
 .stat-info h4 {
   font-size: 0.8rem;
@@ -400,6 +401,7 @@ table tbody tr:hover {
 .badge-danger { background: #fecaca; color: #b91c1c; font-weight: 700; }
 .badge-primary { background: #dbeafe; color: var(--primary); font-weight: 700; }
 .badge-secondary { background: #e2e8f0; color: var(--secondary); font-weight: 700; }
+.badge-info { background: #e0f2fe; color: #0369a1; font-weight: 700; }
 
 /* ===== BUTTONS ===== */
 .btn {
@@ -461,6 +463,17 @@ table tbody tr:hover {
 .btn-sm {
   padding: 8px 16px;
   font-size: 0.85rem;
+}
+
+.btn-outline-primary {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary);
+  color: white;
 }
 
 /* ===== FORMS ===== */

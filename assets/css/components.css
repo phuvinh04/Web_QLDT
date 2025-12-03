@@ -157,6 +157,12 @@
   border-color: var(--accent-emerald);
 }
 
+.action-btn.success:hover {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+}
+
 /* ===== PAGINATION ===== */
 .pagination {
   display: flex;
