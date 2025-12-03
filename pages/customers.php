@@ -291,7 +291,6 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
               <th>Địa chỉ</th>
               <th>Đơn hàng</th>
               <th>Tổng mua</th>
-              <th>Điểm</th>
               <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
@@ -323,9 +322,6 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
               </td>
               <td><strong><?php echo $customer['purchase_count']; ?></strong></td>
               <td><strong style="color: #059669;"><?php echo number_format($customer['total_purchases'], 0, ',', '.'); ?>₫</strong></td>
-              <td>
-                <span class="loyalty-points"><i class="bi bi-star-fill"></i> <?php echo number_format($customer['loyalty_points']); ?></span>
-              </td>
               <td>
                 <span class="badge <?php echo $customer['status'] === 'active' ? 'badge-success' : 'badge-danger'; ?>">
                   <?php echo $customer['status'] === 'active' ? 'Hoạt động' : 'Ngừng HĐ'; ?>
