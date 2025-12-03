@@ -88,7 +88,6 @@ $filterParams = ['category_id' => $categoryFilter, 'status' => $statusFilter, 's
 <head>
   <?php include '../components/head.php'; ?>
   <style>
-    .product-image img { width: 100%; height: 100%; object-fit: cover; }
     .form-row { display: flex; gap: 16px; }
     .form-row .form-group { flex: 1; }
     .product-badge { position: absolute; top: 10px; right: 10px; z-index: 10; }
@@ -232,11 +231,11 @@ $filterParams = ['category_id' => $categoryFilter, 'status' => $statusFilter, 's
                 <?php echo $product['quantity'] == 0 ? 'Hết hàng' : 'Sắp hết'; ?>
               </span>
               <?php endif; ?>
-              <div class="product-image <?php echo ['', 'bg-gradient-pink', 'bg-gradient-blue'][($product['id'] % 3)]; ?>">
+              <div class="product-image">
                 <?php if (!empty($product['image'])): ?>
-                <img src="<?php echo $base_url . 'assets/images/products/' . htmlspecialchars($product['image']); ?>" alt="">
+                <img src="<?php echo $base_url . 'assets/images/products/' . htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
                 <?php else: ?>
-                <i class="bi bi-phone"></i>
+                <div class="no-image"><i class="bi bi-phone"></i></div>
                 <?php endif; ?>
               </div>
               <div class="product-body">
