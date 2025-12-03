@@ -159,10 +159,22 @@ function handlePost($db) {
             // Tạo mã đơn hàng
             $orderNumber = 'ORD' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
-            // Xác định trạng thái dựa trên phương thức thanh toán:
-            // - COD: Chờ xử lý (pending) vì còn phải ship và thu tiền
-            // - Tiền mặt/Thẻ/Chuyển khoản: Hoàn thành ngay (completed)
-            $status = ($paymentMethod === 'cod') ? 'pending' : 'completed';
+            // Xác định trạng thái dựa trên:
+            // 1. Role người tạo: Admin(1), Manager(2) -> hoàn thành ngay (trừ COD)
+            //                   Sales(3) và khác -> chờ duyệt
+            // 2. Phương thức thanh toán: COD luôn pending vì cần ship
+            $roleId = $_SESSION['role_id'] ?? 0;
+            
+            if ($paymentMethod === 'cod') {
+                // COD luôn pending vì cần giao hàng
+                $status = 'pending';
+            } elseif (in_array($roleId, [1, 2])) {
+                // Admin/Manager thanh toán trực tiếp -> hoàn thành
+                $status = 'completed';
+            } else {
+                // Sales và user khác -> chờ duyệt
+                $status = 'pending';
+            }
 
             $insertStmt = $db->prepare("
                 INSERT INTO orders (order_number, customer_id, user_id, subtotal, discount, total_amount, payment_method, status, notes, created_at)
