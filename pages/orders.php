@@ -118,7 +118,6 @@ $statusLabels = [
 
 $paymentLabels = [
     'cash' => 'Tiền mặt',
-    'card' => 'Thẻ',
     'transfer' => 'Chuyển khoản',
     'cod' => 'COD'
 ];
@@ -135,65 +134,91 @@ $paymentLabels = [
     .amount { font-weight: 700; color: var(--primary); }
     .td-actions { white-space: nowrap; }
     
-    /* Modal CSS */
+    /* Nút hoàn tiền */
+    .action-btn.refund { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; }
+    .action-btn.refund:hover { background: #d97706; color: white; border-color: #d97706; }
+    
+    /* Modal CSS - căn giữa hoàn toàn */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
       display: none !important;
       align-items: center;
       justify-content: center;
       z-index: 9999;
     }
-    .modal-overlay.show { display: flex !important; }
+    .modal-overlay.show { 
+      display: flex !important; 
+    }
     .modal-overlay .modal {
       display: block !important;
       background: #fff;
-      border-radius: 12px;
+      border-radius: 16px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      width: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      width: 90%;
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+      animation: modalSlideIn 0.3s ease;
+    }
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .modal-header {
-      padding: 16px 20px;
+      padding: 20px 24px;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px 16px 0 0;
+      color: white;
     }
-    .modal-header h3 { margin: 0; font-size: 1.1rem; }
-    .modal-body { padding: 20px; }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; font-weight: 700; }
+    .modal-header .action-btn { background: rgba(255,255,255,0.2); border: none; color: white; }
+    .modal-header .action-btn:hover { background: rgba(255,255,255,0.3); }
+    .modal-body { padding: 24px; }
     .modal-footer {
-      padding: 16px 20px;
+      padding: 16px 24px;
       border-top: 1px solid #e2e8f0;
       display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+      justify-content: center;
+      gap: 12px;
+      background: #f8fafc;
+      border-radius: 0 0 16px 16px;
     }
     
     /* Order items */
-    .order-items-table { width: 100%; margin-top: 10px; }
+    .order-items-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
     .order-items-table th, .order-items-table td { 
-      padding: 8px 12px; 
+      padding: 12px 14px; 
       border: 1px solid #e2e8f0; 
       text-align: left;
     }
-    .order-items-table th { background: #f8fafc; font-weight: 600; }
+    .order-items-table th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-weight: 600; color: white; }
     .order-items-table .text-right { text-align: right; }
+    .order-items-table tbody tr:hover { background: #f8fafc; }
     
     .product-row {
       display: flex;
       gap: 10px;
       align-items: center;
       margin-bottom: 10px;
-      padding: 10px;
+      padding: 12px;
       background: #f8fafc;
-      border-radius: 8px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
     }
     .product-row select, .product-row input { flex: 1; }
     .product-row .qty-input { max-width: 80px; }
-    .product-row .price-display { min-width: 120px; text-align: right; font-weight: 600; }
+    .product-row .price-display { min-width: 120px; text-align: right; font-weight: 600; color: var(--primary); }
     .product-row .btn-remove { 
       background: #fee2e2; 
       color: #dc2626; 
@@ -202,45 +227,62 @@ $paymentLabels = [
       height: 32px; 
       border-radius: 6px;
       cursor: pointer;
+      transition: all 0.2s;
     }
+    .product-row .btn-remove:hover { background: #dc2626; color: white; }
     
     #orderItemsContainer { max-height: 300px; overflow-y: auto; }
     .order-summary { 
-      background: #f0f9ff; 
-      padding: 15px; 
-      border-radius: 8px; 
-      margin-top: 15px; 
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
+      padding: 20px; 
+      border-radius: 12px; 
+      margin-top: 20px;
+      border: 1px solid #bae6fd;
     }
     .order-summary-row { 
       display: flex; 
       justify-content: space-between; 
-      padding: 5px 0;
+      padding: 8px 0;
+      font-size: 0.95rem;
     }
     .order-summary-row.total { 
-      font-size: 1.2em; 
+      font-size: 1.3em; 
       font-weight: 700; 
-      color: var(--primary);
-      border-top: 2px solid var(--primary);
-      margin-top: 10px;
-      padding-top: 10px;
+      color: #1d4ed8;
+      border-top: 2px solid #1d4ed8;
+      margin-top: 12px;
+      padding-top: 12px;
     }
     
-    /* View modal */
-    .order-detail-section { margin-bottom: 20px; }
-    .order-detail-section h4 { 
-      font-size: 0.95rem; 
-      color: var(--text-muted); 
-      margin-bottom: 10px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #e2e8f0;
+    /* View modal - Chi tiết đơn hàng */
+    .order-detail-section { 
+      margin-bottom: 24px; 
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px;
     }
+    .order-detail-section h4 { 
+      font-size: 0.9rem; 
+      color: #64748b; 
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .order-detail-section h4 i { color: #667eea; }
     .detail-row { 
       display: flex; 
       justify-content: space-between; 
-      padding: 6px 0;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e2e8f0;
     }
-    .detail-row .label { color: var(--text-muted); }
-    .detail-row .value { font-weight: 500; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row .label { color: #64748b; font-weight: 500; }
+    .detail-row .value { font-weight: 600; color: #1e293b; }
 
     .form-row { display: flex; gap: 16px; }
     .form-row .form-group { flex: 1; }
@@ -339,7 +381,6 @@ $paymentLabels = [
               <select name="payment" class="form-control" onchange="this.form.submit()">
                 <option value="">Tất cả</option>
                 <option value="cash" <?php echo $paymentFilter === 'cash' ? 'selected' : ''; ?>>Tiền mặt</option>
-                <option value="card" <?php echo $paymentFilter === 'card' ? 'selected' : ''; ?>>Thẻ</option>
                 <option value="transfer" <?php echo $paymentFilter === 'transfer' ? 'selected' : ''; ?>>Chuyển khoản</option>
                 <option value="cod" <?php echo $paymentFilter === 'cod' ? 'selected' : ''; ?>>COD</option>
               </select>
@@ -446,6 +487,11 @@ $paymentLabels = [
                         <i class="bi bi-x-lg"></i>
                       </button>
                       <?php endif; ?>
+                      <?php if ($canEdit && $order['status'] === 'completed'): ?>
+                      <button class="action-btn refund" onclick="refundOrder(<?php echo $order['id']; ?>, '<?php echo htmlspecialchars($order['order_number']); ?>')" title="Hoàn tiền">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                      </button>
+                      <?php endif; ?>
                     </td>
                   </tr>
                   <?php endforeach; ?>
@@ -479,9 +525,9 @@ $paymentLabels = [
 
   <!-- Modal Tạo/Sửa Đơn hàng -->
   <div class="modal-overlay" id="orderModal">
-    <div class="modal" style="max-width: 800px; width: 90%;">
+    <div class="modal" style="max-width: 750px;">
       <div class="modal-header">
-        <h3 id="modalTitle">Tạo đơn hàng mới</h3>
+        <h3 id="modalTitle"><i class="bi bi-cart-plus me-2"></i>Tạo đơn hàng mới</h3>
         <button class="action-btn" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
@@ -502,7 +548,6 @@ $paymentLabels = [
               <label>Phương thức thanh toán</label>
               <select id="orderPayment" name="payment_method" class="form-control">
                 <option value="cash">Tiền mặt</option>
-                <option value="card">Thẻ</option>
                 <option value="transfer">Chuyển khoản</option>
                 <option value="cod">COD (Ship COD)</option>
               </select>
@@ -551,16 +596,18 @@ $paymentLabels = [
 
   <!-- Modal Xem Chi tiết -->
   <div class="modal-overlay" id="viewModal">
-    <div class="modal" style="max-width: 700px; width: 90%;">
+    <div class="modal" style="max-width: 650px;">
       <div class="modal-header">
-        <h3>Chi tiết đơn hàng <span id="viewOrderNumber"></span></h3>
+        <h3><i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng <span id="viewOrderNumber"></span></h3>
         <button class="action-btn" onclick="closeViewModal()"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="viewModalBody">
         <!-- Content loaded via JS -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeViewModal()">Đóng</button>
+        <button type="button" class="btn btn-secondary" onclick="closeViewModal()">
+          <i class="bi bi-x-circle"></i> Đóng
+        </button>
         <button type="button" class="btn btn-primary" onclick="printOrder()">
           <i class="bi bi-printer"></i> In đơn
         </button>
@@ -897,6 +944,32 @@ $paymentLabels = [
 
     function printOrder() {
       window.print();
+    }
+
+    // Hàm hoàn tiền đơn hàng
+    async function refundOrder(id, orderNumber) {
+      if (!confirm(`Bạn có chắc muốn hoàn tiền đơn hàng ${orderNumber}?\n\nThao tác này sẽ:\n- Chuyển trạng thái sang "Hoàn tiền"\n- Hoàn lại số lượng tồn kho\n- Trừ tổng mua của khách hàng`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('../api/orders.php', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, status: 'refunded' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('success', result.message);
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showAlert('danger', result.message || 'Có lỗi xảy ra');
+        }
+      } catch (error) {
+        showAlert('danger', 'Lỗi kết nối server');
+      }
     }
   </script>
 </body>

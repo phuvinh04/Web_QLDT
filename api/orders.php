@@ -159,11 +159,16 @@ function handlePost($db) {
             // Tạo mã đơn hàng
             $orderNumber = 'ORD' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
+            // Xác định trạng thái dựa trên phương thức thanh toán:
+            // - COD: Chờ xử lý (pending) vì còn phải ship và thu tiền
+            // - Tiền mặt/Thẻ/Chuyển khoản: Hoàn thành ngay (completed)
+            $status = ($paymentMethod === 'cod') ? 'pending' : 'completed';
+
             $insertStmt = $db->prepare("
                 INSERT INTO orders (order_number, customer_id, user_id, subtotal, discount, total_amount, payment_method, status, notes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ");
-            $insertStmt->execute([$orderNumber, $customerId, $userId, $subtotal, $discount, $totalAmount, $paymentMethod, $notes]);
+            $insertStmt->execute([$orderNumber, $customerId, $userId, $subtotal, $discount, $totalAmount, $paymentMethod, $status, $notes]);
             $orderId = $db->lastInsertId();
         }
 
