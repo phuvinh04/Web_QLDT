@@ -1,9 +1,9 @@
 <?php 
 session_start();
 
-// Check login - nếu chưa đăng nhập thì chuyển đến shop
+// Check login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: shop/index.php");
+    header("Location: auth/login.php");
     exit;
 }
 
