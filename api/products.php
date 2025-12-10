@@ -44,7 +44,7 @@ try {
 function handleGet($db) {
     if (isset($_GET['id'])) {
         $id = (int)$_GET['id'];
-        $stmt = $db->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?");
+        $stmt = $db->prepare("SELECT p.*, c.name as category_name, b.name as brand_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id WHERE p.id = ?");
         $stmt->execute([$id]);
         $product = $stmt->fetch();
         if ($product) {
@@ -64,6 +64,7 @@ function handleGet($db) {
     $params = [];
     
     if (!empty($_GET['category_id'])) { $where[] = "p.category_id = ?"; $params[] = (int)$_GET['category_id']; }
+    if (!empty($_GET['brand_id'])) { $where[] = "p.brand_id = ?"; $params[] = (int)$_GET['brand_id']; }
     if (!empty($_GET['status'])) { $where[] = "p.status = ?"; $params[] = $_GET['status']; }
     if (isset($_GET['stock']) && $_GET['stock'] === 'low') { $where[] = "p.quantity <= p.min_quantity"; }
     if (!empty($_GET['search'])) {
@@ -87,7 +88,7 @@ function handleGet($db) {
     $countStmt->execute($params);
     $total = $countStmt->fetchColumn();
     
-    $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE $whereClause ORDER BY $orderBy LIMIT $limit OFFSET $offset";
+    $sql = "SELECT p.*, c.name as category_name, b.name as brand_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id WHERE $whereClause ORDER BY $orderBy LIMIT $limit OFFSET $offset";
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $products = $stmt->fetchAll();
@@ -135,10 +136,11 @@ function handlePost($db) {
         return;
     }
     
-    $sql = "INSERT INTO products (category_id, name, sku, description, price, cost, quantity, min_quantity, image, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO products (category_id, brand_id, name, sku, description, price, cost, quantity, min_quantity, image, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $db->prepare($sql);
     $stmt->execute([
         (int)$input['category_id'],
+        isset($input['brand_id']) && $input['brand_id'] ? (int)$input['brand_id'] : null,
         trim($input['name']),
         trim($input['sku']),
         $input['description'] ?? null,
@@ -184,12 +186,12 @@ function handlePut($db) {
     
     $fields = [];
     $params = [];
-    $allowedFields = ['category_id', 'name', 'sku', 'description', 'price', 'cost', 'quantity', 'min_quantity', 'image', 'status'];
+    $allowedFields = ['category_id', 'brand_id', 'name', 'sku', 'description', 'price', 'cost', 'quantity', 'min_quantity', 'image', 'status'];
     
     foreach ($allowedFields as $field) {
-        if (isset($input[$field])) {
+        if (array_key_exists($field, $input)) {
             $fields[] = "$field = ?";
-            $params[] = $input[$field];
+            $params[] = $input[$field] === '' ? null : $input[$field];
         }
     }
     
