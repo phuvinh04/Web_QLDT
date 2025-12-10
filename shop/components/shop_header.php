@@ -1,13 +1,11 @@
 <?php
-// Shop Header Component
-// Include config if not already included
+// Shop Header Component - Flat Design
 if (!function_exists('env')) {
-    require_once '../config.php';
+    require_once __DIR__ . '/../../config.php';
 }
 
 $cart_count = 0;
 if (isset($_SESSION['user_id'])) {
-    // Get cart count from database
     try {
         $pdo_header = new PDO(
             "mysql:host=" . env('DB_HOST', 'localhost') . ";dbname=" . env('DB_NAME', 'db_quanlydienthoai') . ";charset=utf8mb4",
@@ -24,14 +22,12 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
-<!-- Shop Navigation -->
-<nav class="navbar navbar-expand-lg shop-navbar sticky-top">
+<nav class="navbar navbar-expand-lg shop-navbar">
     <div class="container">
         <a class="navbar-brand" href="index.php">
             <i class="bi bi-phone"></i> PhoneStore
         </a>
         
-        <!-- Mobile Search Toggle -->
         <button class="btn d-lg-none me-2" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch">
             <i class="bi bi-search text-white"></i>
         </button>
@@ -40,9 +36,8 @@ if (isset($_SESSION['user_id'])) {
             <span class="navbar-toggler-icon"></span>
         </button>
         
-        <!-- Desktop Search -->
         <div class="d-none d-lg-flex flex-grow-1 mx-4">
-            <form method="GET" action="products.php" class="d-flex w-100">
+            <form method="GET" action="products.php" class="d-flex w-100" style="max-width: 480px;">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control search-input-nav" 
                            placeholder="Tìm kiếm sản phẩm..." 
@@ -51,12 +46,9 @@ if (isset($_SESSION['user_id'])) {
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
-                <?php if (isset($category_filter) && $category_filter > 0): ?>
-                    <input type="hidden" name="category" value="<?php echo $category_filter; ?>">
-                <?php endif; ?>
             </form>
         </div>
-        
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto d-lg-none">
                 <li class="nav-item">
@@ -65,52 +57,43 @@ if (isset($_SESSION['user_id'])) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#products">
+                    <a class="nav-link" href="products.php">
                         <i class="bi bi-grid"></i> Sản phẩm
                     </a>
                 </li>
             </ul>
             
-            <ul class="navbar-nav">
-                <!-- Cart Icon -->
+            <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
                     <a class="nav-link position-relative" href="cart.php">
-                        <i class="bi bi-cart3"></i> Giỏ hàng
+                        <i class="bi bi-cart3"></i> 
+                        <span class="d-lg-none">Giỏ hàng</span>
                         <?php if ($cart_count > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                <?php echo $cart_count; ?>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">
+                                <?php echo $cart_count > 99 ? '99+' : $cart_count; ?>
                             </span>
                         <?php endif; ?>
                     </a>
                 </li>
                 
-
-                
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <!-- Logged in user menu -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <?php if (!empty($_SESSION['avatar']) && strpos($_SESSION['avatar'], 'http') === 0): ?>
-                                <img src="<?php echo $_SESSION['avatar']; ?>" alt="Avatar" 
-                                     style="width: 24px; height: 24px; border-radius: 50%; margin-right: 5px;">
+                                <img src="<?php echo $_SESSION['avatar']; ?>" alt="" 
+                                     style="width: 24px; height: 24px; border-radius: 50%; margin-right: 6px; object-fit: cover;">
                             <?php else: ?>
                                 <i class="bi bi-person-circle"></i>
                             <?php endif; ?>
-                            <?php echo htmlspecialchars($_SESSION['full_name']); ?>
+                            <span class="d-none d-lg-inline"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="showProfileModal()">
-                                <i class="bi bi-person"></i> Thông tin cá nhân
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showOrderHistoryModal()">
-                                <i class="bi bi-clock-history"></i> Lịch sử đơn hàng
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showOrderTrackingModal()">
-                                <i class="bi bi-truck"></i> Tra cứu đơn hàng
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="orders.php">
+                                <i class="bi bi-bag-check"></i> Đơn hàng của tôi
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <?php if ($_SESSION['role_id'] != 5): ?>
-                                <li><a class="dropdown-item" href="index.php">
+                                <li><a class="dropdown-item" href="../index.php">
                                     <i class="bi bi-speedometer2"></i> Quản lý
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -121,21 +104,16 @@ if (isset($_SESSION['user_id'])) {
                         </ul>
                     </li>
                 <?php else: ?>
-                    <!-- Guest user menu -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person"></i> Tài khoản
+                            <i class="bi bi-person"></i> <span class="d-none d-lg-inline">Tài khoản</span>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="../auth/login.php">
                                 <i class="bi bi-box-arrow-in-right"></i> Đăng nhập
                             </a></li>
                             <li><a class="dropdown-item" href="../auth/register.php">
                                 <i class="bi bi-person-plus"></i> Đăng ký
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="showOrderTrackingModal()">
-                                <i class="bi bi-truck"></i> Tra cứu đơn hàng
                             </a></li>
                         </ul>
                     </li>
@@ -144,7 +122,6 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
     
-    <!-- Mobile Search Collapse -->
     <div class="collapse w-100 d-lg-none" id="mobileSearch">
         <div class="container py-3">
             <form method="GET" action="products.php" class="d-flex">
@@ -160,32 +137,3 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
 </nav>
-
-<style>
-.search-input-nav {
-    border: none;
-    border-radius: 25px 0 0 25px;
-    padding: 8px 15px;
-}
-
-.search-input-nav:focus {
-    box-shadow: none;
-    border-color: #ced4da;
-}
-
-.shop-navbar .dropdown-menu {
-    border-radius: var(--radius-md);
-    border: 2px solid var(--border);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.shop-navbar .dropdown-item {
-    padding: 10px 20px;
-    font-weight: 500;
-}
-
-.shop-navbar .dropdown-item:hover {
-    background: var(--light);
-    color: var(--primary);
-}
-</style>

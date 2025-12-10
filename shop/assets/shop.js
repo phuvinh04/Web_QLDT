@@ -154,7 +154,7 @@ class ShopManager {
         modal.show();
 
         try {
-            const response = await fetch(`shop/api/product_detail.php?id=${productId}`);
+            const response = await fetch(`api/product_detail.php?id=${productId}`);
             const data = await response.json();
             
             if (data.success) {
@@ -253,7 +253,7 @@ class ShopManager {
             // Load cart items via AJAX
             try {
                 const productIds = Object.keys(this.cart).join(',');
-                const response = await fetch(`shop/api/cart_items.php?ids=${productIds}`);
+                const response = await fetch(`api/cart_items.php?ids=${productIds}`);
                 const data = await response.json();
                 
                 if (data.success) {

@@ -1,5 +1,8 @@
 <?php
-// Shop Homepage
+// Shop Homepage - Flat Design
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -7,10 +10,8 @@ if (session_status() === PHP_SESSION_NONE) {
 $page_title = "PhoneStore - Trang chủ";
 $base_url = "../";
 
-// Include config
 require_once '../config.php';
 
-// Kết nối database
 try {
     $pdo = new PDO(
         "mysql:host=" . env('DB_HOST', 'localhost') . ";dbname=" . env('DB_NAME', 'db_quanlydienthoai') . ";charset=utf8mb4",
@@ -25,7 +26,6 @@ try {
     die("Lỗi kết nối database: " . $e->getMessage());
 }
 
-// Lấy sản phẩm nổi bật (top 8 sản phẩm mới nhất)
 $featured_query = "SELECT p.*, c.name as category_name 
                    FROM products p 
                    LEFT JOIN categories c ON p.category_id = c.id 
@@ -34,11 +34,9 @@ $featured_query = "SELECT p.*, c.name as category_name
                    LIMIT 8";
 $featured_products = $pdo->query($featured_query)->fetchAll();
 
-// Lấy danh mục
 $categories_query = "SELECT * FROM categories ORDER BY name";
 $categories = $pdo->query($categories_query)->fetchAll();
 
-// Lấy sản phẩm bán chạy (mock data)
 $bestseller_query = "SELECT p.*, c.name as category_name 
                      FROM products p 
                      LEFT JOIN categories c ON p.category_id = c.id 
@@ -47,8 +45,8 @@ $bestseller_query = "SELECT p.*, c.name as category_name
                      LIMIT 4";
 $bestseller_products = $pdo->query($bestseller_query)->fetchAll();
 
-// Include product card component
 include 'components/product_card.php';
+$GLOBALS['base_url'] = '../';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -56,13 +54,11 @@ include 'components/product_card.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?></title>
-    
-    <!-- Bootstrap CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="assets/shop.css">
 </head>
 <body>
@@ -76,7 +72,7 @@ include 'components/product_card.php';
                     <h1>Điện Thoại Chính Hãng</h1>
                     <p class="lead">Khám phá bộ sưu tập điện thoại mới nhất với giá tốt nhất. Chất lượng đảm bảo, bảo hành chính hãng.</p>
                     <div class="hero-buttons">
-                        <a href="products.php" class="btn btn-light btn-lg me-3">
+                        <a href="products.php" class="btn btn-light btn-lg">
                             <i class="bi bi-grid"></i> Xem sản phẩm
                         </a>
                         <a href="#categories" class="btn btn-outline-light btn-lg">
@@ -84,9 +80,9 @@ include 'components/product_card.php';
                         </a>
                     </div>
                 </div>
-                <div class="col-lg-6 text-center">
+                <div class="col-lg-6 d-none d-lg-block">
                     <div class="hero-image">
-                        <i class="bi bi-phone" style="font-size: 8rem; opacity: 0.3;"></i>
+                        <i class="bi bi-phone" style="font-size: 10rem;"></i>
                     </div>
                 </div>
             </div>
@@ -199,10 +195,7 @@ include 'components/product_card.php';
     <?php include 'components/shop_footer.php'; ?>
     <?php include 'components/modals.php'; ?>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Shop JavaScript -->
     <script>
         window.userLoggedIn = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
         window.userId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null'; ?>;
