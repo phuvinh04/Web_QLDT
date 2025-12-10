@@ -190,7 +190,10 @@ class ShopManager {
                 </div>
                 <div class="col-md-6">
                     <div class="product-modal-info">
-                        <span class="badge bg-primary mb-2">${product.category_name || 'Điện thoại'}</span>
+                        <div class="mb-2">
+                            ${product.brand_name ? `<span class="badge bg-dark me-1">${product.brand_name}</span>` : ''}
+                            <span class="badge bg-primary">${product.category_name || 'Điện thoại'}</span>
+                        </div>
                         <h3>${product.name}</h3>
                         <div class="product-modal-price">${this.formatPrice(product.price)}₫</div>
                         
@@ -214,6 +217,10 @@ class ShopManager {
                                 <span class="spec-label">Danh mục:</span>
                                 <span class="spec-value">${product.category_name || 'Điện thoại'}</span>
                             </div>
+                            ${product.brand_name ? `<div class="spec-item">
+                                <span class="spec-label">Thương hiệu:</span>
+                                <span class="spec-value">${product.brand_name}</span>
+                            </div>` : ''}
                         </div>
                         
                         <div class="d-flex gap-2 mt-4">

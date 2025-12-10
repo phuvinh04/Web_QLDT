@@ -27,10 +27,11 @@ try {
 
 // Lấy filter từ URL
 $category_filter = isset($_GET['category']) ? (int)$_GET['category'] : 0;
+$brand_filter = isset($_GET['brand']) ? (int)$_GET['brand'] : 0;
 $search_filter = isset($_GET['search']) ? trim($_GET['search']) : '';
 $price_filter = isset($_GET['price']) ? $_GET['price'] : '';
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : '';
-$per_page = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 12;
+$per_page = 12;
 $current_page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 // Xây dựng query sản phẩm
@@ -40,6 +41,11 @@ $params = [];
 if ($category_filter > 0) {
     $where_conditions[] = "p.category_id = ?";
     $params[] = $category_filter;
+}
+
+if ($brand_filter > 0) {
+    $where_conditions[] = "p.brand_id = ?";
+    $params[] = $brand_filter;
 }
 
 if (!empty($search_filter)) {
@@ -94,9 +100,10 @@ $total_pages = ceil($total_products / $per_page);
 $offset = ($current_page - 1) * $per_page;
 
 // Lấy danh sách sản phẩm
-$products_query = "SELECT p.*, c.name as category_name 
+$products_query = "SELECT p.*, c.name as category_name, b.name as brand_name 
                    FROM products p 
                    LEFT JOIN categories c ON p.category_id = c.id 
+                   LEFT JOIN brands b ON p.brand_id = b.id
                    WHERE $where_clause
                    $order_clause
                    LIMIT $per_page OFFSET $offset";
@@ -108,6 +115,10 @@ $products = $stmt->fetchAll();
 // Lấy danh mục
 $categories_query = "SELECT * FROM categories ORDER BY name";
 $categories = $pdo->query($categories_query)->fetchAll();
+
+// Lấy thương hiệu
+$brands_query = "SELECT * FROM brands ORDER BY name";
+$brands = $pdo->query($brands_query)->fetchAll();
 
 // Include components
 include 'components/product_card.php';
@@ -189,14 +200,14 @@ $GLOBALS['base_url'] = '../';
         <?php 
         $current_filters = [
             'category' => $category_filter,
+            'brand' => $brand_filter,
             'search' => $search_filter,
             'price' => $price_filter,
-            'sort' => $sort_filter,
-            'per_page' => $per_page
+            'sort' => $sort_filter
         ];
         
         include 'components/product_filters.php';
-        renderProductFilters($categories, $current_filters);
+        renderProductFilters($categories, $current_filters, $brands);
         ?>
 
         <!-- Products Grid -->

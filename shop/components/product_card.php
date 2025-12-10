@@ -52,9 +52,14 @@ function renderProductCard($product) {
             </div>
 
             <div class="product-info">
-                <?php if (!empty($product['category_name'])): ?>
-                    <span class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></span>
-                <?php endif; ?>
+                <div class="product-meta">
+                    <?php if (!empty($product['brand_name'])): ?>
+                        <span class="product-brand"><?php echo htmlspecialchars($product['brand_name']); ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($product['category_name'])): ?>
+                        <span class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></span>
+                    <?php endif; ?>
+                </div>
                 
                 <h5 class="product-title" onclick="showProductModal(<?php echo $product_id; ?>)">
                     <?php echo htmlspecialchars($product['name']); ?>

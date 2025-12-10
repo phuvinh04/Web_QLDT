@@ -24,9 +24,10 @@ try {
     }
 
     // Lấy thông tin sản phẩm
-    $query = "SELECT p.*, c.name as category_name 
+    $query = "SELECT p.*, c.name as category_name, b.name as brand_name 
               FROM products p 
               LEFT JOIN categories c ON p.category_id = c.id 
+              LEFT JOIN brands b ON p.brand_id = b.id
               WHERE p.id = ? AND p.status = 'active'";
     
     $stmt = $pdo->prepare($query);
