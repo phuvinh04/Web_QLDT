@@ -75,7 +75,7 @@ $status_labels = [
 
 // Payment method labels
 $payment_labels = [
-    'cod' => 'Thanh toán khi nhận hàng',
+    'cod' => 'Thanh toán khi nhận hàng (COD)',
     'cash' => 'Tiền mặt',
     'card' => 'Thẻ',
     'transfer' => 'Chuyển khoản'

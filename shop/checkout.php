@@ -74,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $note = trim($_POST['note'] ?? '');
-    $payment_method = $_POST['payment_method'] ?? 'cod';
     
     if (empty($full_name) || empty($phone) || empty($address)) {
         $error_message = 'Vui lòng điền đầy đủ thông tin giao hàng';
@@ -85,16 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Create order
             $order_code = 'HD' . date('YmdHis') . rand(100, 999);
             
-            // Map payment method
-            $payment_map = ['cod' => 'cod', 'bank' => 'transfer', 'cash' => 'cash', 'card' => 'card'];
-            $db_payment = $payment_map[$payment_method] ?? 'cod';
-            
             $order_stmt = $pdo->prepare("
                 INSERT INTO orders (order_number, user_id, subtotal, tax, total_amount, payment_method, notes, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+                VALUES (?, ?, ?, ?, ?, 'cod', ?, 'pending')
             ");
             $order_stmt->execute([
-                $order_code, $user_id, $subtotal, $tax, $total, $db_payment, 
+                $order_code, $user_id, $subtotal, $tax, $total,
                 "Tên: $full_name\nSĐT: $phone\nĐịa chỉ: $address\nGhi chú: $note"
             ]);
             $order_id = $pdo->lastInsertId();
@@ -204,18 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h5 class="mb-3"><i class="bi bi-wallet2"></i> Phương thức thanh toán</h5>
                         <div class="card">
                             <div class="card-body">
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
-                                    <label class="form-check-label" for="cod">
-                                        <i class="bi bi-cash-coin text-success"></i> Thanh toán khi nhận hàng (COD)
-                                    </label>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-cash-coin text-success me-2" style="font-size: 1.5rem;"></i>
+                                    <div>
+                                        <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                        <p class="text-muted mb-0 small">Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</p>
+                                    </div>
                                 </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="bank" id="bank">
-                                    <label class="form-check-label" for="bank">
-                                        <i class="bi bi-bank text-primary"></i> Chuyển khoản ngân hàng
-                                    </label>
-                                </div>
+                                <input type="hidden" name="payment_method" value="cod">
                             </div>
                         </div>
                     </div>
