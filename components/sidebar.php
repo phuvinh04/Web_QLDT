@@ -14,7 +14,6 @@ $menu_permissions = [
     'users'      => [1],            // Chỉ Admin
     'suppliers'  => [1, 2, 4],      // Admin, Manager, Warehouse
     'categories' => [1, 2],         // Admin, Manager
-    'brands'     => [1, 2],         // Admin, Manager
     'reports'    => [1, 2],         // Admin, Manager
 ];
 
@@ -62,10 +61,6 @@ function hasPermission($page, $role_id, $permissions) {
     
     <?php if (hasPermission('categories', $role_id, $menu_permissions)): ?>
     <li><a href="<?php echo $base_url; ?>pages/categories.php" class="<?php echo ($current_page == 'categories') ? 'active' : ''; ?>"><i class="bi bi-grid"></i><span>Danh mục</span></a></li>
-    <?php endif; ?>
-    
-    <?php if (hasPermission('brands', $role_id, $menu_permissions)): ?>
-    <li><a href="<?php echo $base_url; ?>pages/brands.php" class="<?php echo ($current_page == 'brands') ? 'active' : ''; ?>"><i class="bi bi-building"></i><span>Thương hiệu</span></a></li>
     <?php endif; ?>
     
     <?php if (hasPermission('reports', $role_id, $menu_permissions)): ?>

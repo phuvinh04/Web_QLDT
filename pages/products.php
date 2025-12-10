@@ -20,13 +20,8 @@ $db = getDB();
 $categoriesStmt = $db->query("SELECT id, name FROM categories ORDER BY name");
 $categories = $categoriesStmt->fetchAll();
 
-// Lấy danh sách thương hiệu
-$brandsStmt = $db->query("SELECT id, name FROM brands ORDER BY name");
-$brands = $brandsStmt->fetchAll();
-
 $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $categoryFilter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
-$brandFilter = isset($_GET['brand_id']) ? (int)$_GET['brand_id'] : 0;
 $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 $sortFilter = isset($_GET['sort']) ? $_GET['sort'] : '';
 $searchFilter = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -38,11 +33,6 @@ $params = [];
 if ($categoryFilter > 0) {
     $where[] = "p.category_id = ?";
     $params[] = $categoryFilter;
-}
-
-if ($brandFilter > 0) {
-    $where[] = "p.brand_id = ?";
-    $params[] = $brandFilter;
 }
 
 if ($statusFilter === 'in_stock') {
@@ -76,7 +66,7 @@ $totalProducts = $countStmt->fetchColumn();
 $totalPages = ceil($totalProducts / $limit);
 $offset = ($currentPage - 1) * $limit;
 
-$sql = "SELECT p.*, c.name as category_name, b.name as brand_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN brands b ON p.brand_id = b.id WHERE $whereClause ORDER BY $orderBy LIMIT $limit OFFSET $offset";
+$sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE $whereClause ORDER BY $orderBy LIMIT $limit OFFSET $offset";
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
@@ -91,7 +81,7 @@ function buildQueryString($params, $exclude = []) {
     return http_build_query($query);
 }
 
-$filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, 'status' => $statusFilter, 'sort' => $sortFilter, 'search' => $searchFilter];
+$filterParams = ['category_id' => $categoryFilter, 'status' => $statusFilter, 'sort' => $sortFilter, 'search' => $searchFilter];
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -193,15 +183,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
               </select>
             </div>
             <div class="filter-group">
-              <label>Thương hiệu</label>
-              <select name="brand_id" class="form-control" onchange="this.form.submit()">
-                <option value="">Tất cả hãng</option>
-                <?php foreach ($brands as $brand): ?>
-                <option value="<?php echo $brand['id']; ?>" <?php echo $brandFilter == $brand['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($brand['name']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="filter-group">
               <label>Trạng thái</label>
               <select name="status" class="form-control" onchange="this.form.submit()">
                 <option value="">Tất cả</option>
@@ -258,12 +239,7 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
                 <?php endif; ?>
               </div>
               <div class="product-body">
-                <div class="product-category">
-                  <?php echo htmlspecialchars($product['category_name'] ?? 'Chưa phân loại'); ?>
-                  <?php if (!empty($product['brand_name'])): ?>
-                  <span class="product-brand">• <?php echo htmlspecialchars($product['brand_name']); ?></span>
-                  <?php endif; ?>
-                </div>
+                <div class="product-category"><?php echo htmlspecialchars($product['category_name'] ?? 'Chưa phân loại'); ?></div>
                 <div class="product-name"><?php echo htmlspecialchars($product['name']); ?></div>
                 <div class="product-price"><?php echo number_format($product['price'], 0, ',', '.'); ?>₫</div>
                 <div class="product-stock">
@@ -333,33 +309,24 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
               </select>
             </div>
             <div class="form-group">
-              <label>Thương hiệu</label>
-              <select id="productBrand" name="brand_id" class="form-control">
-                <option value="">-- Chọn thương hiệu --</option>
-                <?php foreach ($brands as $brand): ?>
-                <option value="<?php echo $brand['id']; ?>"><?php echo htmlspecialchars($brand['name']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
               <label>Trạng thái</label>
               <select id="productStatus" name="status" class="form-control">
                 <option value="active">Đang bán</option>
                 <option value="inactive">Ngừng bán</option>
               </select>
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Giá bán <span style="color:red">*</span></label>
               <input type="number" id="productPrice" name="price" class="form-control" min="0" required>
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label>Giá nhập</label>
               <input type="number" id="productCost" name="cost" class="form-control" min="0">
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Số lượng tồn</label>
               <input type="number" id="productQuantity" name="quantity" class="form-control" min="0" value="0">
@@ -484,7 +451,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
               <tr><td style="padding: 8px 0; color: #64748b;">Tên</td><td style="padding: 8px 0; font-weight: 600;">${p.name}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">SKU</td><td style="padding: 8px 0;">${p.sku}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Danh mục</td><td style="padding: 8px 0;">${p.category_name || '-'}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Thương hiệu</td><td style="padding: 8px 0;">${p.brand_name || '-'}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Giá bán</td><td style="padding: 8px 0; font-weight: 700; color: #1d4ed8;">${Number(p.price).toLocaleString('vi-VN')}₫</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Tồn kho</td><td style="padding: 8px 0;">${p.quantity}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Mô tả</td><td style="padding: 8px 0;">${p.description || '-'}</td></tr>
@@ -510,7 +476,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
           document.getElementById('productName').value = p.name;
           document.getElementById('productSku').value = p.sku;
           document.getElementById('productCategory').value = p.category_id;
-          document.getElementById('productBrand').value = p.brand_id || '';
           document.getElementById('productStatus').value = p.status;
           document.getElementById('productPrice').value = p.price;
           document.getElementById('productCost').value = p.cost || '';
@@ -534,7 +499,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
         name: document.getElementById('productName').value.trim(),
         sku: document.getElementById('productSku').value.trim(),
         category_id: parseInt(document.getElementById('productCategory').value) || null,
-        brand_id: parseInt(document.getElementById('productBrand').value) || null,
         status: document.getElementById('productStatus').value,
         price: parseFloat(document.getElementById('productPrice').value) || null,
         cost: parseFloat(document.getElementById('productCost').value) || null,

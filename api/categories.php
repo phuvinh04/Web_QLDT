@@ -1,7 +1,6 @@
 <?php
 /**
  * API Danh mục sản phẩm
- * GET (list/detail), POST (create), PUT (update), DELETE
  */
 
 session_start();
@@ -16,154 +15,20 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/../config/database.php';
 
 $db = getDB();
-$method = $_SERVER['REQUEST_METHOD'];
-$role_id = $_SESSION['role_id'] ?? 0;
-$canEdit = in_array($role_id, [1, 2]); // Admin và Manager
 
-try {
-    switch ($method) {
-        case 'GET':
-            handleGet($db);
-            break;
-        case 'POST':
-            if (!$canEdit) {
-                http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Không có quyền']);
-                exit;
-            }
-            handlePost($db);
-            break;
-        case 'PUT':
-            if (!$canEdit) {
-                http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Không có quyền']);
-                exit;
-            }
-            handlePut($db);
-            break;
-        case 'DELETE':
-            if (!$canEdit) {
-                http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'Không có quyền']);
-                exit;
-            }
-            handleDelete($db);
-            break;
-        default:
-            http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Method không hỗ trợ']);
-    }
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Lỗi server: ' . $e->getMessage()]);
-}
-
-function handleGet($db) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['id'])) {
         $stmt = $db->prepare("SELECT * FROM categories WHERE id = ?");
         $stmt->execute([(int)$_GET['id']]);
         $category = $stmt->fetch();
-        echo $category 
-            ? json_encode(['success' => true, 'data' => $category]) 
-            : json_encode(['success' => false, 'message' => 'Không tìm thấy']);
+        echo $category ? json_encode(['success' => true, 'data' => $category]) : json_encode(['success' => false, 'message' => 'Không tìm thấy']);
         exit;
     }
     
-    $sql = "SELECT c.*, COUNT(p.id) as product_count 
-            FROM categories c 
-            LEFT JOIN products p ON c.id = p.category_id 
-            GROUP BY c.id 
-            ORDER BY c.name ASC";
+    $sql = "SELECT c.*, COUNT(p.id) as product_count FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.id ORDER BY c.name ASC";
     $stmt = $db->query($sql);
     echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
-}
-
-function handlePost($db) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (empty($input['name'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Tên danh mục không được để trống']);
-        exit;
-    }
-    
-    $name = trim($input['name']);
-    $description = trim($input['description'] ?? '');
-    
-    // Kiểm tra trùng tên
-    $stmt = $db->prepare("SELECT id FROM categories WHERE name = ?");
-    $stmt->execute([$name]);
-    if ($stmt->fetch()) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Tên danh mục đã tồn tại']);
-        exit;
-    }
-    
-    $stmt = $db->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
-    $stmt->execute([$name, $description]);
-    
-    echo json_encode([
-        'success' => true, 
-        'message' => 'Thêm danh mục thành công',
-        'data' => ['id' => $db->lastInsertId(), 'name' => $name, 'description' => $description]
-    ]);
-}
-
-function handlePut($db) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (empty($input['id']) || empty($input['name'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
-        exit;
-    }
-    
-    $id = (int)$input['id'];
-    $name = trim($input['name']);
-    $description = trim($input['description'] ?? '');
-    
-    // Kiểm tra trùng tên (trừ chính nó)
-    $stmt = $db->prepare("SELECT id FROM categories WHERE name = ? AND id != ?");
-    $stmt->execute([$name, $id]);
-    if ($stmt->fetch()) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Tên danh mục đã tồn tại']);
-        exit;
-    }
-    
-    $stmt = $db->prepare("UPDATE categories SET name = ?, description = ? WHERE id = ?");
-    $stmt->execute([$name, $description, $id]);
-    
-    echo json_encode(['success' => true, 'message' => 'Cập nhật danh mục thành công']);
-}
-
-function handleDelete($db) {
-    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-    
-    if (!$id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Thiếu ID danh mục']);
-        exit;
-    }
-    
-    // Kiểm tra còn sản phẩm không
-    $stmt = $db->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
-    $stmt->execute([$id]);
-    $productCount = $stmt->fetchColumn();
-    
-    if ($productCount > 0) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => "Không thể xóa! Danh mục đang có $productCount sản phẩm"]);
-        exit;
-    }
-    
-    $stmt = $db->prepare("DELETE FROM categories WHERE id = ?");
-    $stmt->execute([$id]);
-    
-    if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => true, 'message' => 'Xóa danh mục thành công']);
-    } else {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Không tìm thấy danh mục']);
-    }
+} else {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method không hỗ trợ']);
 }
