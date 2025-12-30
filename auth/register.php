@@ -19,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     
-    $role_id = 3; 
+    $role_id = 5; // Khách hàng (customer)
     $status = 'active';
     $password_pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/';
 
@@ -100,6 +100,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Chỉ thực hiện insert nếu không có lỗi avatar
             if (empty($errors)) {
                 if ($stmt->execute()) {
+                    // Thêm khách hàng vào bảng customers để hiển thị bên quản trị
+                    $customer_stmt = $conn->prepare("INSERT INTO customers (name, phone, email, status) VALUES (?, ?, ?, 'active')");
+                    $customer_stmt->bind_param("sss", $full_name, $phone, $email);
+                    $customer_stmt->execute();
+                    
                     $success = "Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.";
                 } else {
                     $system_error = "Lỗi hệ thống: " . $conn->error;

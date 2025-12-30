@@ -113,18 +113,22 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
     .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .image-preview i { font-size: 2rem; color: var(--text-muted); }
     
-    /* Modal CSS - Custom modal (không dùng Bootstrap modal) */
+    /* Modal CSS - Custom modal đẹp hơn */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
       display: none !important;
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      padding: 20px;
     }
     .modal-overlay.show {
       display: flex !important;
@@ -133,33 +137,147 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
       display: block !important;
       opacity: 1 !important;
       background: #fff;
-      border-radius: 12px;
+      border-radius: 20px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05);
       position: relative;
-      width: auto;
+      width: 100%;
+      max-width: 700px;
+      margin: auto;
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .modal-header {
-      padding: 16px 20px;
+      padding: 20px 24px;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: linear-gradient(to right, #f8fafc, #fff);
+      border-radius: 20px 20px 0 0;
     }
     .modal-header h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-header .action-btn {
+      background: #f1f5f9;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: #64748b;
+      padding: 8px 12px;
+      line-height: 1;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+    .modal-header .action-btn:hover {
+      background: #e2e8f0;
+      color: #1e293b;
     }
     .modal-body {
-      padding: 20px;
+      padding: 28px;
+      background: #fff;
+    }
+    .modal-body .form-label {
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      display: block;
+      font-size: 0.85rem;
+    }
+    .modal-body .form-label .text-danger {
+      color: #ef4444;
+    }
+    .modal-body .form-control,
+    .modal-body .form-select {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+    .modal-body .form-control:focus,
+    .modal-body .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      outline: none;
+      background: #fff;
+    }
+    .modal-body .form-control::placeholder {
+      color: #9ca3af;
+    }
+    .modal-body .row {
+      margin: 0 -8px;
+    }
+    .modal-body .row > [class*="col"] {
+      padding: 0 8px;
+      margin-bottom: 16px;
+    }
+    .modal-body .form-group {
+      margin-bottom: 16px;
     }
     .modal-footer {
-      padding: 16px 20px;
+      padding: 20px 24px;
       border-top: 1px solid #e2e8f0;
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 12px;
+      background: linear-gradient(to right, #f8fafc, #fff);
+      border-radius: 0 0 20px 20px;
+    }
+    .modal-footer .btn {
+      padding: 12px 24px;
+      font-weight: 600;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+    .modal-footer .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+    }
+    .modal-footer .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    .modal-footer .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #7c3aed);
+      border: none;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .modal-footer .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+    .modal-footer .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .modal-footer .btn-danger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+    .image-preview {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+    .image-preview:hover {
+      border-color: var(--primary);
+      background: #f0f4ff;
     }
   </style>
 </head>
@@ -304,27 +422,25 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
 
   <!-- Modal Thêm/Sửa - Luôn render để JS hoạt động -->
   <div class="modal-overlay" id="productModal">
-    <div class="modal" style="max-width: 700px;">
+    <div class="modal">
       <div class="modal-header">
         <h3 id="modalTitle">Thêm sản phẩm mới</h3>
-        <button class="action-btn" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+        <button class="action-btn" onclick="closeModal()">&times;</button>
       </div>
       <div class="modal-body">
         <form id="productForm">
           <input type="hidden" id="productId" name="id">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Tên sản phẩm <span style="color:red">*</span></label>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
               <input type="text" id="productName" name="name" class="form-control" required>
             </div>
-            <div class="form-group">
-              <label>Mã SKU <span style="color:red">*</span></label>
+            <div class="col-md-6">
+              <label class="form-label">Mã SKU <span class="text-danger">*</span></label>
               <input type="text" id="productSku" name="sku" class="form-control" required>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Danh mục <span style="color:red">*</span></label>
+            <div class="col-md-6">
+              <label class="form-label">Danh mục <span class="text-danger">*</span></label>
               <select id="productCategory" name="category_id" class="form-control" required>
                 <option value="">-- Chọn danh mục --</option>
                 <?php foreach ($categories as $cat): ?>
@@ -332,8 +448,8 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
                 <?php endforeach; ?>
               </select>
             </div>
-            <div class="form-group">
-              <label>Thương hiệu</label>
+            <div class="col-md-6">
+              <label class="form-label">Thương hiệu</label>
               <select id="productBrand" name="brand_id" class="form-control">
                 <option value="">-- Chọn thương hiệu --</option>
                 <?php foreach ($brands as $brand): ?>
@@ -341,63 +457,59 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
                 <?php endforeach; ?>
               </select>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Trạng thái</label>
+            <div class="col-md-6">
+              <label class="form-label">Trạng thái</label>
               <select id="productStatus" name="status" class="form-control">
                 <option value="active">Đang bán</option>
                 <option value="inactive">Ngừng bán</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Giá bán <span style="color:red">*</span></label>
+              <label class="form-label">Giá bán <span class="text-danger">*</span></label>
               <input type="number" id="productPrice" name="price" class="form-control" min="0" required>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Giá nhập</label>
+            <div class="col-md-4">
+              <label class="form-label">Giá nhập</label>
               <input type="number" id="productCost" name="cost" class="form-control" min="0">
             </div>
-            <div class="form-group">
-              <label>Số lượng tồn</label>
+            <div class="col-md-4">
+              <label class="form-label">Số lượng tồn</label>
               <input type="number" id="productQuantity" name="quantity" class="form-control" min="0" value="0">
             </div>
-            <div class="form-group">
-              <label>Số lượng tối thiểu</label>
+            <div class="col-md-4">
+              <label class="form-label">Số lượng tối thiểu</label>
               <input type="number" id="productMinQuantity" name="min_quantity" class="form-control" min="0" value="10">
             </div>
-          </div>
-          <div class="form-group">
-            <label>Mô tả</label>
-            <textarea id="productDescription" name="description" class="form-control" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Hình ảnh</label>
-            <input type="file" id="productImageFile" accept="image/*" class="form-control">
-            <input type="hidden" id="productImage" name="image">
-            <div class="image-preview" id="imagePreview"><i class="bi bi-image"></i></div>
+            <div class="col-12">
+              <label class="form-label">Mô tả</label>
+              <textarea id="productDescription" name="description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Hình ảnh</label>
+              <input type="file" id="productImageFile" accept="image/*" class="form-control">
+              <input type="hidden" id="productImage" name="image">
+              <div class="image-preview" id="imagePreview"><i class="bi bi-image"></i></div>
+            </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" onclick="saveProduct()"><i class="bi bi-check-lg"></i> Lưu</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+        <button type="button" class="btn btn-primary" onclick="saveProduct()"><i class="bi bi-check-lg"></i> Lưu sản phẩm</button>
       </div>
     </div>
   </div>
 
   <!-- Modal Xem Chi tiết -->
   <div class="modal-overlay" id="viewModal">
-    <div class="modal" style="max-width: 600px;">
+    <div class="modal">
       <div class="modal-header">
         <h3>Chi tiết sản phẩm</h3>
-        <button class="action-btn" onclick="closeViewModal()"><i class="bi bi-x-lg"></i></button>
+        <button class="action-btn" onclick="closeViewModal()">&times;</button>
       </div>
       <div class="modal-body" id="viewModalContent"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeViewModal()">Đóng</button>
+        <button type="button" class="btn btn-secondary" onclick="closeViewModal()">Đóng</button>
         <?php if ($canEdit): ?>
         <button type="button" class="btn btn-primary" id="editFromViewBtn"><i class="bi bi-pencil"></i> Sửa</button>
         <?php endif; ?>

@@ -31,7 +31,7 @@ $brand_filter = isset($_GET['brand']) ? (int)$_GET['brand'] : 0;
 $search_filter = isset($_GET['search']) ? trim($_GET['search']) : '';
 $price_filter = isset($_GET['price']) ? $_GET['price'] : '';
 $sort_filter = isset($_GET['sort']) ? $_GET['sort'] : '';
-$per_page = 12;
+$per_page = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 12;
 $current_page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 // Xây dựng query sản phẩm
@@ -100,10 +100,9 @@ $total_pages = ceil($total_products / $per_page);
 $offset = ($current_page - 1) * $per_page;
 
 // Lấy danh sách sản phẩm
-$products_query = "SELECT p.*, c.name as category_name, b.name as brand_name 
+$products_query = "SELECT p.*, c.name as category_name 
                    FROM products p 
                    LEFT JOIN categories c ON p.category_id = c.id 
-                   LEFT JOIN brands b ON p.brand_id = b.id
                    WHERE $where_clause
                    $order_clause
                    LIMIT $per_page OFFSET $offset";
@@ -203,11 +202,12 @@ $GLOBALS['base_url'] = '../';
             'brand' => $brand_filter,
             'search' => $search_filter,
             'price' => $price_filter,
-            'sort' => $sort_filter
+            'sort' => $sort_filter,
+            'per_page' => $per_page
         ];
         
         include 'components/product_filters.php';
-        renderProductFilters($categories, $current_filters, $brands);
+        renderProductFilters($categories, $brands, $current_filters);
         ?>
 
         <!-- Products Grid -->

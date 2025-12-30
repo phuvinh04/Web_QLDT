@@ -3,9 +3,13 @@ session_start();
 require_once '../config/db.php'; // Adjusted path
 require_once '../config/google_config.php'; // Include Google Config
 
-// If already logged in, redirect to dashboard
+// If already logged in, redirect based on role
 if (isset($_SESSION['user_id'])) {
-    header("Location: ../index.php"); // Adjusted path
+    if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 5) {
+        header("Location: ../shop/index.php");
+    } else {
+        header("Location: ../index.php");
+    }
     exit;
 }
 
@@ -37,7 +41,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role_id'] = $user['role_id'];
                 $_SESSION['avatar'] = $user['avatar'];
-                header("Location: ../index.php"); // Adjusted path
+                
+                // Redirect based on role: customer goes to shop, others go to admin
+                if ($user['role_id'] == 5) {
+                    header("Location: ../shop/index.php");
+                } else {
+                    header("Location: ../index.php");
+                }
                 exit;
             } else {
                 $errors['common'] = "Tên đăng nhập hoặc mật khẩu không chính xác.";

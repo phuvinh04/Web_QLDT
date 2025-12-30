@@ -67,7 +67,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             unset($_SESSION['temp_user_id']);
             unset($_SESSION['temp_email']);
             
-            header("Location: ../index.php");
+            // Redirect based on role
+            if ($user_info['role_id'] == 5) {
+                header("Location: ../shop/index.php");
+            } else {
+                header("Location: ../index.php");
+            }
             exit;
         } else {
             $errors['common'] = "Lỗi cập nhật: " . $conn->error;

@@ -39,7 +39,13 @@ if (isset($_GET['code'])) {
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role_id'] = $user['role_id'];
                 $_SESSION['avatar'] = $user['avatar'];
-                header("Location: ../index.php");
+                
+                // Redirect based on role
+                if ($user['role_id'] == 5) {
+                    header("Location: ../shop/index.php");
+                } else {
+                    header("Location: ../index.php");
+                }
                 exit;
             } else {
                 // Tài khoản chưa kích hoạt (chưa set password/username)
@@ -69,7 +75,13 @@ if (isset($_GET['code'])) {
                     $_SESSION['full_name'] = $user_by_email['full_name'];
                     $_SESSION['role_id'] = $user_by_email['role_id'];
                     $_SESSION['avatar'] = $avatar; // Dùng avatar mới từ Google
-                    header("Location: ../index.php");
+                    
+                    // Redirect based on role
+                    if ($user_by_email['role_id'] == 5) {
+                        header("Location: ../shop/index.php");
+                    } else {
+                        header("Location: ../index.php");
+                    }
                     exit;
                 } else {
                     $_SESSION['temp_user_id'] = $user_by_email['id'];
@@ -80,7 +92,7 @@ if (isset($_GET['code'])) {
             } else {
                 // TRƯỜNG HỢP C: Người dùng hoàn toàn mới
                 // Insert với status = 'inactive', username và password để NULL
-                $role_id = 3; // Khách hàng hoặc Sales tùy logic
+                $role_id = 5; // Khách hàng (customer)
                 $status = 'inactive';
                 
                 $insert = $conn->prepare("INSERT INTO users (full_name, email, google_id, avatar, role_id, status) VALUES (?, ?, ?, ?, ?, ?)");

@@ -1,9 +1,15 @@
 <?php 
 session_start();
 
-// Check login
+// Nếu chưa đăng nhập, chuyển đến trang shop (trang chủ người dùng)
 if (!isset($_SESSION['user_id'])) {
-    header("Location: auth/login.php");
+    header("Location: shop/index.php");
+    exit;
+}
+
+// Nếu là khách hàng (role_id = 5), chuyển đến trang shop
+if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 5) {
+    header("Location: shop/index.php");
     exit;
 }
 

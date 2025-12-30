@@ -741,3 +741,115 @@ table tbody tr:hover {
 .td-actions {
   white-space: nowrap;
 }
+
+/* --- Modal Styles - Custom centered modal --- */
+.custom-modal-overlay { 
+  display: none; 
+  position: fixed; 
+  z-index: 9999; 
+  left: 0; 
+  top: 0; 
+  width: 100vw; 
+  height: 100vh; 
+  background: rgba(0,0,0,0.5); 
+  align-items: center; 
+  justify-content: center; 
+}
+.custom-modal-overlay.show { display: flex !important; }
+.custom-modal-box { 
+  background: #fff; 
+  border-radius: 12px; 
+  width: 90%; 
+  max-width: 600px; 
+  max-height: 90vh; 
+  overflow-y: auto; 
+  margin: auto; 
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+}
+.custom-modal-box.modal-lg { max-width: 800px; }
+.custom-modal-header { 
+  padding: 16px 20px; 
+  border-bottom: 1px solid #eee; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.custom-modal-header h5 { margin: 0; font-size: 18px; font-weight: 600; }
+.custom-modal-close { 
+  background: none; 
+  border: none; 
+  font-size: 28px; 
+  cursor: pointer; 
+  color: #666; 
+  line-height: 1; 
+}
+.custom-modal-close:hover { color: #333; }
+.custom-modal-body { padding: 20px; }
+.custom-modal-footer { 
+  padding: 16px 20px; 
+  border-top: 1px solid #eee; 
+  display: flex; 
+  gap: 10px; 
+  justify-content: flex-end; 
+}
+
+/* Keep Bootstrap modal styles for backward compatibility */
+body.modal-open {
+  padding-right: 0 !important;
+  overflow: auto !important;
+}
+
+.modal {
+  padding-left: var(--sidebar-width) !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 991px) {
+  .modal {
+    padding-left: 0 !important;
+  }
+}
+
+.modal-dialog {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.modal-dialog-centered {
+  display: flex !important;
+  align-items: center !important;
+  min-height: calc(100% - 1rem);
+}
+
+.modal.show {
+  display: flex !important;
+  align-items: center;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-content {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-light);
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-light);
+  padding: 1rem 1.5rem;
+}

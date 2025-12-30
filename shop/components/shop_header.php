@@ -64,6 +64,15 @@ if (isset($_SESSION['user_id'])) {
             </ul>
             
             <ul class="navbar-nav ms-auto">
+                <?php if (isset($_SESSION['user_id'])): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="wishlist.php" title="Yêu thích">
+                        <i class="bi bi-heart"></i>
+                        <span class="d-lg-none"> Yêu thích</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
                 <li class="nav-item">
                     <a class="nav-link position-relative" href="cart.php">
                         <i class="bi bi-cart3"></i> 
@@ -88,6 +97,12 @@ if (isset($_SESSION['user_id'])) {
                             <span class="d-none d-lg-inline"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="profile.php">
+                                <i class="bi bi-person"></i> Thông tin cá nhân
+                            </a></li>
+                            <li><a class="dropdown-item" href="wishlist.php">
+                                <i class="bi bi-heart"></i> Sản phẩm yêu thích
+                            </a></li>
                             <li><a class="dropdown-item" href="orders.php">
                                 <i class="bi bi-bag-check"></i> Đơn hàng của tôi
                             </a></li>

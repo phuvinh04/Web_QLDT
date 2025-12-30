@@ -1,6 +1,6 @@
 <?php
 // Product Filters Component - Flat Design
-function renderProductFilters($categories, $current_filters = [], $brands = []) {
+function renderProductFilters($categories, $brands, $current_filters = []) {
     $category_filter = $current_filters['category'] ?? 0;
     $brand_filter = $current_filters['brand'] ?? 0;
     $price_filter = $current_filters['price'] ?? '';
@@ -38,10 +38,10 @@ function renderProductFilters($categories, $current_filters = [], $brands = []) 
                 </div>
             </div>
             
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-2 col-md-6">
                 <div class="filter-card">
                     <h6 class="filter-title">
-                        <i class="bi bi-building"></i> Thương hiệu
+                        <i class="bi bi-award"></i> Thương hiệu
                     </h6>
                     <div class="filter-options" style="max-height: 200px; overflow-y: auto;">
                         <div class="form-check">
@@ -65,8 +65,8 @@ function renderProductFilters($categories, $current_filters = [], $brands = []) 
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6">
+            
+            <div class="col-lg-2 col-md-6">
                 <div class="filter-card">
                     <h6 class="filter-title">
                         <i class="bi bi-currency-dollar"></i> Khoảng giá
@@ -105,13 +105,13 @@ function renderProductFilters($categories, $current_filters = [], $brands = []) 
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-lg-3 col-md-6">
                 <div class="filter-card">
                     <h6 class="filter-title">
                         <i class="bi bi-sort-down"></i> Sắp xếp
                     </h6>
-                    <select class="form-select mb-2" name="sort" onchange="applyFilters()">
+                    <select class="form-select" name="sort" onchange="applyFilters()">
                         <option value="" <?php echo $sort_filter == '' ? 'selected' : ''; ?>>Mặc định</option>
                         <option value="name_asc" <?php echo $sort_filter == 'name_asc' ? 'selected' : ''; ?>>Tên A-Z</option>
                         <option value="name_desc" <?php echo $sort_filter == 'name_desc' ? 'selected' : ''; ?>>Tên Z-A</option>
@@ -119,16 +119,29 @@ function renderProductFilters($categories, $current_filters = [], $brands = []) 
                         <option value="price_desc" <?php echo $sort_filter == 'price_desc' ? 'selected' : ''; ?>>Giá cao → thấp</option>
                         <option value="newest" <?php echo $sort_filter == 'newest' ? 'selected' : ''; ?>>Mới nhất</option>
                     </select>
-                    <div class="btn-group w-100" role="group">
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="filter-card">
+                    <h6 class="filter-title">
+                        <i class="bi bi-grid-3x3"></i> Hiển thị
+                    </h6>
+                    <div class="btn-group w-100 mb-2" role="group">
                         <input type="radio" class="btn-check" name="view" id="view_grid" value="grid" checked>
-                        <label class="btn btn-outline-primary btn-sm" for="view_grid">
-                            <i class="bi bi-grid"></i>
+                        <label class="btn btn-outline-primary" for="view_grid">
+                            <i class="bi bi-grid"></i> Lưới
                         </label>
                         <input type="radio" class="btn-check" name="view" id="view_list" value="list">
-                        <label class="btn btn-outline-primary btn-sm" for="view_list">
-                            <i class="bi bi-list"></i>
+                        <label class="btn btn-outline-primary" for="view_list">
+                            <i class="bi bi-list"></i> Danh sách
                         </label>
                     </div>
+                    <select class="form-select" name="per_page" onchange="applyFilters()">
+                        <option value="12">12 sản phẩm</option>
+                        <option value="24">24 sản phẩm</option>
+                        <option value="48">48 sản phẩm</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -163,6 +176,9 @@ function renderProductFilters($categories, $current_filters = [], $brands = []) 
         
         const sortSelect = document.querySelector('select[name="sort"]');
         if (sortSelect && sortSelect.value) formData.append('sort', sortSelect.value);
+        
+        const perPageSelect = document.querySelector('select[name="per_page"]');
+        if (perPageSelect && perPageSelect.value !== '12') formData.append('per_page', perPageSelect.value);
         
         const params = new URLSearchParams(formData);
         window.location.href = 'products.php' + (params.toString() ? '?' + params.toString() : '');

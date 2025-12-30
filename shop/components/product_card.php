@@ -45,24 +45,24 @@ function renderProductCard($product) {
                 </div>
                 
                 <div class="product-quick-actions">
-                    <button class="btn" onclick="showProductModal(<?php echo $product_id; ?>)" title="Xem nhanh">
+                    <a href="product_detail.php?id=<?php echo $product_id; ?>" class="btn" title="Xem chi tiết">
                         <i class="bi bi-eye"></i>
+                    </a>
+                    <button class="btn wishlist-btn" onclick="toggleWishlist(<?php echo $product_id; ?>, this)" title="Yêu thích">
+                        <i class="bi bi-heart"></i>
                     </button>
                 </div>
             </div>
 
             <div class="product-info">
-                <div class="product-meta">
-                    <?php if (!empty($product['brand_name'])): ?>
-                        <span class="product-brand"><?php echo htmlspecialchars($product['brand_name']); ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($product['category_name'])): ?>
-                        <span class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></span>
-                    <?php endif; ?>
-                </div>
+                <?php if (!empty($product['category_name'])): ?>
+                    <span class="product-category"><?php echo htmlspecialchars($product['category_name']); ?></span>
+                <?php endif; ?>
                 
-                <h5 class="product-title" onclick="showProductModal(<?php echo $product_id; ?>)">
-                    <?php echo htmlspecialchars($product['name']); ?>
+                <h5 class="product-title">
+                    <a href="product_detail.php?id=<?php echo $product_id; ?>" style="color: inherit; text-decoration: none;">
+                        <?php echo htmlspecialchars($product['name']); ?>
+                    </a>
                 </h5>
                 
                 <div class="product-rating">

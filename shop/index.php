@@ -23,26 +23,20 @@ try {
     die("Lỗi kết nối database: " . $e->getMessage());
 }
 
-$featured_query = "SELECT p.*, c.name as category_name, b.name as brand_name 
+$featured_query = "SELECT p.*, c.name as category_name 
                    FROM products p 
                    LEFT JOIN categories c ON p.category_id = c.id 
-                   LEFT JOIN brands b ON p.brand_id = b.id
                    WHERE p.status = 'active' 
                    ORDER BY p.created_at DESC 
                    LIMIT 8";
 $featured_products = $pdo->query($featured_query)->fetchAll();
 
-$categories_query = "SELECT * FROM categories ORDER BY id";
+$categories_query = "SELECT * FROM categories ORDER BY name";
 $categories = $pdo->query($categories_query)->fetchAll();
 
-// Lấy thương hiệu
-$brands_query = "SELECT * FROM brands ORDER BY name";
-$brands = $pdo->query($brands_query)->fetchAll();
-
-$bestseller_query = "SELECT p.*, c.name as category_name, b.name as brand_name 
+$bestseller_query = "SELECT p.*, c.name as category_name 
                      FROM products p 
                      LEFT JOIN categories c ON p.category_id = c.id 
-                     LEFT JOIN brands b ON p.brand_id = b.id
                      WHERE p.status = 'active' 
                      ORDER BY p.price DESC 
                      LIMIT 4";
@@ -97,42 +91,17 @@ $GLOBALS['base_url'] = '../';
         <section id="categories" class="categories-section">
             <h2 class="section-title">Danh Mục Sản Phẩm</h2>
             <div class="row">
-                <?php 
-                // Icon mapping cho từng loại category
-                $category_icons = [
-                    'Điện thoại cao cấp' => 'bi-phone-fill',
-                    'Điện thoại tầm trung' => 'bi-phone',
-                    'Điện thoại giá rẻ' => 'bi-phone-vibrate',
-                    'Máy tính bảng' => 'bi-tablet',
-                    'Phụ kiện' => 'bi-headphones',
-                ];
-                foreach ($categories as $category): 
-                    $icon = $category_icons[$category['name']] ?? 'bi-box';
-                ?>
+                <?php foreach ($categories as $category): ?>
                     <div class="col-lg-4 col-md-6 mb-4">
                         <a href="products.php?category=<?php echo $category['id']; ?>" class="category-card">
                             <div class="category-icon">
-                                <i class="bi <?php echo $icon; ?>"></i>
+                                <i class="bi bi-phone"></i>
                             </div>
                             <h5><?php echo htmlspecialchars($category['name']); ?></h5>
                             <p><?php echo htmlspecialchars($category['description'] ?? 'Khám phá các sản phẩm ' . $category['name']); ?></p>
                             <div class="category-arrow">
                                 <i class="bi bi-arrow-right"></i>
                             </div>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <!-- Brands Section -->
-        <section class="brands-section">
-            <h2 class="section-title">Thương Hiệu Nổi Bật</h2>
-            <div class="row justify-content-center">
-                <?php foreach ($brands as $brand): ?>
-                    <div class="col-lg-2 col-md-3 col-4 mb-3">
-                        <a href="products.php?brand=<?php echo $brand['id']; ?>" class="brand-card text-center d-block p-3">
-                            <div class="brand-name fw-bold"><?php echo htmlspecialchars($brand['name']); ?></div>
                         </a>
                     </div>
                 <?php endforeach; ?>

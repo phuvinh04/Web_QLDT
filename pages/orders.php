@@ -451,7 +451,7 @@ $paymentLabels = [
                     </td>
                     <td>
                       <div class="customer-info">
-                        <div class="name"><?php echo htmlspecialchars($order['customer_name'] ?? 'Khách lẻ'); ?></div>
+                        <div class="name"><?php echo htmlspecialchars($order['customer_name'] ?? $order['user_name'] ?? 'Khách lẻ'); ?></div>
                         <?php if ($order['customer_phone']): ?>
                         <div class="phone"><i class="bi bi-phone"></i> <?php echo htmlspecialchars($order['customer_phone']); ?></div>
                         <?php endif; ?>
@@ -842,7 +842,7 @@ $paymentLabels = [
               <h4><i class="bi bi-person"></i> Khách hàng</h4>
               <div class="detail-row">
                 <span class="label">Tên:</span>
-                <span class="value">${order.customer_name || 'Khách lẻ'}</span>
+                <span class="value">${order.customer_name || order.user_name || 'Khách lẻ'}</span>
               </div>
               ${order.customer_phone ? `<div class="detail-row"><span class="label">SĐT:</span><span class="value">${order.customer_phone}</span></div>` : ''}
             </div>

@@ -190,10 +190,7 @@ class ShopManager {
                 </div>
                 <div class="col-md-6">
                     <div class="product-modal-info">
-                        <div class="mb-2">
-                            ${product.brand_name ? `<span class="badge bg-dark me-1">${product.brand_name}</span>` : ''}
-                            <span class="badge bg-primary">${product.category_name || 'Điện thoại'}</span>
-                        </div>
+                        <span class="badge bg-primary mb-2">${product.category_name || 'Điện thoại'}</span>
                         <h3>${product.name}</h3>
                         <div class="product-modal-price">${this.formatPrice(product.price)}₫</div>
                         
@@ -217,10 +214,6 @@ class ShopManager {
                                 <span class="spec-label">Danh mục:</span>
                                 <span class="spec-value">${product.category_name || 'Điện thoại'}</span>
                             </div>
-                            ${product.brand_name ? `<div class="spec-item">
-                                <span class="spec-label">Thương hiệu:</span>
-                                <span class="spec-value">${product.brand_name}</span>
-                            </div>` : ''}
                         </div>
                         
                         <div class="d-flex gap-2 mt-4">
@@ -411,7 +404,41 @@ function addToCart(productId, quantity = 1) {
     shopManager.addToCart(productId, quantity);
 }
 
-
+function toggleWishlist(productId, button) {
+    fetch('api/wishlist.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=toggle&product_id=${productId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const icon = button.querySelector('i');
+            if (data.in_wishlist) {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                button.classList.add('active');
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                button.classList.remove('active');
+            }
+            shopManager.showToast('success', data.message);
+        } else {
+            if (data.message.includes('đăng nhập')) {
+                shopManager.showLoginRequired();
+            } else {
+                shopManager.showToast('error', data.message);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        shopManager.showToast('error', 'Có lỗi xảy ra');
+    });
+}
 
 function showProductModal(productId) {
     shopManager.showProductModal(productId);
