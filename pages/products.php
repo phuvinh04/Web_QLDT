@@ -144,7 +144,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
       position: relative;
       width: 100%;
       max-width: 700px;
-      margin: auto;
       animation: modalSlideIn 0.3s ease-out;
     }
     @keyframes modalSlideIn {

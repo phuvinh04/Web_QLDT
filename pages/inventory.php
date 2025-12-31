@@ -36,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Check stock for out transaction
             if ($type === 'out') {
-                $check = $conn->query("SELECT stock FROM products WHERE id = $product_id");
+                $check = $conn->query("SELECT quantity FROM products WHERE id = $product_id");
                 $product = $check->fetch_assoc();
-                if ($product['stock'] < $quantity) {
-                    $error = "Số lượng xuất kho vượt quá tồn kho hiện tại ({$product['stock']})!";
+                if ($product['quantity'] < $quantity) {
+                    $error = "Số lượng xuất kho vượt quá tồn kho hiện tại ({$product['quantity']})!";
                 }
             }
             
@@ -54,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Update product stock
                     if ($type === 'in') {
-                        $conn->query("UPDATE products SET stock = stock + $quantity WHERE id = $product_id");
+                        $conn->query("UPDATE products SET quantity = quantity + $quantity WHERE id = $product_id");
                     } else {
-                        $conn->query("UPDATE products SET stock = stock - $quantity WHERE id = $product_id");
+                        $conn->query("UPDATE products SET quantity = quantity - $quantity WHERE id = $product_id");
                     }
                     
                     $conn->commit();
@@ -130,7 +130,7 @@ $stmt->execute();
 $movements = $stmt->get_result();
 
 // Get all products with stock
-$productsResult = $conn->query("SELECT id, name, stock, image FROM products ORDER BY name");
+$productsResult = $conn->query("SELECT id, name, quantity, image FROM products ORDER BY name");
 
 // Get suppliers for select
 $suppliers = $conn->query("SELECT id, name FROM suppliers WHERE status = 'active' ORDER BY name");
@@ -138,15 +138,15 @@ $suppliers = $conn->query("SELECT id, name FROM suppliers WHERE status = 'active
 // Get stats
 $today = date('Y-m-d');
 $statsQuery = $conn->query("SELECT 
-    (SELECT COALESCE(SUM(stock), 0) FROM products) as total_stock,
+    (SELECT COALESCE(SUM(quantity), 0) FROM products) as total_stock,
     (SELECT COALESCE(SUM(quantity), 0) FROM stock_movements WHERE type = 'in' AND DATE(created_at) = '$today') as today_in,
     (SELECT COALESCE(SUM(quantity), 0) FROM stock_movements WHERE type = 'out' AND DATE(created_at) = '$today') as today_out,
-    (SELECT COUNT(*) FROM products WHERE stock <= 10) as low_stock
+    (SELECT COUNT(*) FROM products WHERE quantity <= 10) as low_stock
 ");
 $stats = $statsQuery ? $statsQuery->fetch_assoc() : ['total_stock' => 0, 'today_in' => 0, 'today_out' => 0, 'low_stock' => 0];
 
 // Get low stock products
-$lowStockProducts = $conn->query("SELECT id, name, stock, image FROM products WHERE stock <= 10 ORDER BY stock ASC LIMIT 10");
+$lowStockProducts = $conn->query("SELECT id, name, quantity, image FROM products WHERE quantity <= 10 ORDER BY quantity ASC LIMIT 10");
 $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
 ?>
 <!DOCTYPE html>
@@ -251,7 +251,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
                        class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
                   <div class="flex-grow-1">
                     <div class="small fw-bold text-truncate" style="max-width: 120px;"><?php echo htmlspecialchars($lowProduct['name']); ?></div>
-                    <small class="text-danger">Còn <?php echo $lowProduct['stock']; ?> SP</small>
+                    <small class="text-danger">Còn <?php echo $lowProduct['quantity']; ?> SP</small>
                   </div>
                   <button class="btn btn-sm btn-success" onclick="openStockInModal(<?php echo $lowProduct['id']; ?>)">
                     <i class="bi bi-plus"></i>
@@ -389,7 +389,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
           <?php 
           $productsResult->data_seek(0);
           while ($product = $productsResult->fetch_assoc()): 
-            $stockClass = $product['stock'] <= 10 ? 'bg-danger' : ($product['stock'] <= 30 ? 'bg-warning' : 'bg-success');
+            $stockClass = $product['quantity'] <= 10 ? 'bg-danger' : ($product['quantity'] <= 30 ? 'bg-warning' : 'bg-success');
           ?>
           <div class="col-md-4 col-lg-3">
             <div class="card">
@@ -400,7 +400,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
                   <div class="fw-bold text-truncate" title="<?php echo htmlspecialchars($product['name']); ?>">
                     <?php echo htmlspecialchars($product['name']); ?>
                   </div>
-                  <span class="badge <?php echo $stockClass; ?>"><?php echo number_format($product['stock']); ?> SP</span>
+                  <span class="badge <?php echo $stockClass; ?>"><?php echo number_format($product['quantity']); ?> SP</span>
                 </div>
               </div>
             </div>
@@ -428,7 +428,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
               <?php 
               $productsResult->data_seek(0);
               while ($p = $productsResult->fetch_assoc()): ?>
-              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['stock']; ?>)</option>
+              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
               <?php endwhile; ?>
             </select>
           </div>
@@ -481,7 +481,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
               <?php 
               $productsResult->data_seek(0);
               while ($p = $productsResult->fetch_assoc()): ?>
-              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['stock']; ?>)</option>
+              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
               <?php endwhile; ?>
             </select>
           </div>

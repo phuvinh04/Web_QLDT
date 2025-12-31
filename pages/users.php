@@ -210,7 +210,7 @@ $base_url = "../";
   <style>
     .user-modal-overlay { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
     .user-modal-overlay.show { display: flex !important; }
-    .user-modal-box { background: #fff; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; margin: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .user-modal-box { background: #fff; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
     .user-modal-header { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
     .user-modal-header h5 { margin: 0; font-size: 18px; font-weight: 600; }
     .user-modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; line-height: 1; }

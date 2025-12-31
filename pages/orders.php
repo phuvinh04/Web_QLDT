@@ -169,7 +169,6 @@ $paymentLabels = [
       box-shadow: 0 25px 50px rgba(0,0,0,0.25);
       width: 90%;
       max-width: 600px;
-      margin: 0 auto;
       position: relative;
       animation: modalSlideIn 0.3s ease;
     }

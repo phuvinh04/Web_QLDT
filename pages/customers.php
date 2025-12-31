@@ -159,7 +159,7 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
     
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
     .modal-overlay.show { display: flex !important; align-items: center; justify-content: center; }
-    .modal-overlay .modal { display: block !important; background: #fff; border-radius: 12px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; margin: auto; }
+    .modal-overlay .modal { display: block !important; background: #fff; border-radius: 12px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
     .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h3 { margin: 0; font-size: 1.1rem; }
     .modal-body { padding: 20px; }

@@ -243,38 +243,34 @@ function getCategoryStyle($name) {
   </div>
 
   <!-- Modal Thêm/Sửa danh mục -->
-  <div class="modal fade" id="categoryModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTitle">Thêm danh mục</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="categoryForm">
-          <div class="modal-body">
-            <input type="hidden" id="categoryId" name="id">
-            <div class="mb-3">
-              <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="categoryName" name="name" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Mô tả</label>
-              <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-            <button type="submit" class="btn btn-primary" id="saveBtn">Lưu</button>
-          </div>
-        </form>
+  <div class="custom-modal-overlay" id="categoryModal">
+    <div class="custom-modal-box">
+      <div class="custom-modal-header">
+        <h5 id="modalTitle">Thêm danh mục</h5>
+        <button type="button" class="custom-modal-close" onclick="closeModal()">&times;</button>
       </div>
+      <form id="categoryForm">
+        <div class="custom-modal-body">
+          <input type="hidden" id="categoryId" name="id">
+          <div class="mb-3">
+            <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="categoryName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mô tả</label>
+            <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="custom-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Lưu</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <?php include '../components/scripts.php'; ?>
   <script>
-    const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
-    
     function changeSort() {
       const sort = document.getElementById('sortSelect').value;
       window.location.href = 'categories.php?sort=' + sort;
@@ -285,7 +281,7 @@ function getCategoryStyle($name) {
       document.getElementById('categoryId').value = '';
       document.getElementById('categoryName').value = '';
       document.getElementById('categoryDescription').value = '';
-      categoryModal.show();
+      document.getElementById('categoryModal').classList.add('show');
     }
     
     function openEditModal(id, name, description) {
@@ -293,8 +289,17 @@ function getCategoryStyle($name) {
       document.getElementById('categoryId').value = id;
       document.getElementById('categoryName').value = name;
       document.getElementById('categoryDescription').value = description;
-      categoryModal.show();
+      document.getElementById('categoryModal').classList.add('show');
     }
+    
+    function closeModal() {
+      document.getElementById('categoryModal').classList.remove('show');
+    }
+    
+    // Click outside to close
+    document.getElementById('categoryModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
     
     document.getElementById('categoryForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -317,7 +322,7 @@ function getCategoryStyle($name) {
         const result = await response.json();
         
         if (result.success) {
-          categoryModal.hide();
+          closeModal();
           location.reload();
         } else {
           alert(result.message || 'Có lỗi xảy ra');

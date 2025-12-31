@@ -176,39 +176,35 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
     </div>
   </div>
 
-  <!-- Modal Thêm/Sửa -->
-  <div class="modal fade" id="brandModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTitle">Thêm thương hiệu</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="brandForm">
-          <div class="modal-body">
-            <input type="hidden" id="brandId" name="id">
-            <div class="mb-3">
-              <label class="form-label">Tên thương hiệu <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="brandName" name="name" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Mô tả</label>
-              <textarea class="form-control" id="brandDescription" name="description" rows="3"></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-            <button type="submit" class="btn btn-primary">Lưu</button>
-          </div>
-        </form>
+  <!-- Modal Thêm/Sửa thương hiệu -->
+  <div class="custom-modal-overlay" id="brandModal">
+    <div class="custom-modal-box">
+      <div class="custom-modal-header">
+        <h5 id="modalTitle">Thêm thương hiệu</h5>
+        <button type="button" class="custom-modal-close" onclick="closeModal()">&times;</button>
       </div>
+      <form id="brandForm">
+        <div class="custom-modal-body">
+          <input type="hidden" id="brandId" name="id">
+          <div class="mb-3">
+            <label class="form-label">Tên thương hiệu <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="brandName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mô tả</label>
+            <textarea class="form-control" id="brandDescription" name="description" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="custom-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <?php include '../components/scripts.php'; ?>
   <script>
-    const brandModal = new bootstrap.Modal(document.getElementById('brandModal'));
-    
     function filterBrands() {
       const search = document.getElementById('searchInput').value.toLowerCase();
       document.querySelectorAll('.brand-item').forEach(item => {
@@ -222,7 +218,7 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
       document.getElementById('brandId').value = '';
       document.getElementById('brandName').value = '';
       document.getElementById('brandDescription').value = '';
-      brandModal.show();
+      document.getElementById('brandModal').classList.add('show');
     }
     
     function openEditModal(id, name, description) {
@@ -230,8 +226,17 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
       document.getElementById('brandId').value = id;
       document.getElementById('brandName').value = name;
       document.getElementById('brandDescription').value = description;
-      brandModal.show();
+      document.getElementById('brandModal').classList.add('show');
     }
+    
+    function closeModal() {
+      document.getElementById('brandModal').classList.remove('show');
+    }
+    
+    // Click outside to close
+    document.getElementById('brandModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
     
     document.getElementById('brandForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -254,7 +259,7 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
         const result = await response.json();
         
         if (result.success) {
-          brandModal.hide();
+          closeModal();
           location.reload();
         } else {
           alert(result.message || 'Có lỗi xảy ra');
