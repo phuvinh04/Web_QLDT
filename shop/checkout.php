@@ -47,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $address = trim($_POST['address'] ?? '');
     $note = trim($_POST['note'] ?? '');
     $cart_data = json_decode($_POST['cart_data'] ?? '{}', true);
+    $promotion_id = !empty($_POST['promotion_id']) ? intval($_POST['promotion_id']) : null;
+    $discount_amount = floatval($_POST['discount_amount'] ?? 0);
     
     if (empty($full_name) || empty($phone) || empty($address)) {
         echo json_encode(['success' => false, 'message' => 'Vui lòng điền đầy đủ thông tin giao hàng']);
@@ -93,9 +95,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ];
         }
         
-        $shipping = $subtotal >= 500000 ? 0 : 30000;
-        $tax = $subtotal * 0.1;
-        $total = $subtotal + $shipping + $tax;
+        // Validate promotion if applied
+        $final_discount = 0;
+        if ($promotion_id && $discount_amount > 0) {
+            $today = date('Y-m-d');
+            $promo_stmt = $pdo->prepare("
+                SELECT * FROM promotions 
+                WHERE id = ? AND active = 1 
+                AND (start_date IS NULL OR start_date <= ?)
+                AND (end_date IS NULL OR end_date >= ?)
+            ");
+            $promo_stmt->execute([$promotion_id, $today, $today]);
+            $promotion = $promo_stmt->fetch();
+            
+            if ($promotion) {
+                // Verify min_amount
+                if ($promotion['min_amount'] <= 0 || $subtotal >= $promotion['min_amount']) {
+                    $final_discount = min($discount_amount, $subtotal); // Không giảm quá subtotal
+                }
+            }
+        }
+        
+        $after_discount = $subtotal - $final_discount;
+        $shipping = $after_discount >= 500000 ? 0 : 30000;
+        $tax = $after_discount * 0.1;
+        $total = $after_discount + $shipping + $tax;
         
         $pdo->beginTransaction();
         
@@ -103,11 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $order_code = 'HD' . date('YmdHis') . rand(100, 999);
         
         $order_stmt = $pdo->prepare("
-            INSERT INTO orders (order_number, user_id, subtotal, tax, total_amount, payment_method, notes, status)
-            VALUES (?, ?, ?, ?, ?, 'cod', ?, 'pending')
+            INSERT INTO orders (order_number, user_id, subtotal, discount, tax, total_amount, payment_method, notes, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'cod', ?, 'pending')
         ");
         $order_stmt->execute([
-            $order_code, $user_id, $subtotal, $tax, $total,
+            $order_code, $user_id, $subtotal, $final_discount, $tax, $total,
             "Tên: $full_name\nSĐT: $phone\nĐịa chỉ: $address\nGhi chú: $note"
         ]);
         $order_id = $pdo->lastInsertId();
@@ -238,6 +262,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <span>Tạm tính:</span>
                                 <span id="orderSubtotal">0₫</span>
                             </div>
+                            
+                            <!-- Phần áp dụng khuyến mãi -->
+                            <div class="promotion-section mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span><i class="bi bi-tag text-success"></i> Khuyến mãi:</span>
+                                    <span id="discountAmount" class="text-success">0₫</span>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <select id="promotionSelect" class="form-select form-select-sm">
+                                        <option value="">-- Chọn khuyến mãi --</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-success btn-sm" id="applyPromotionBtn">
+                                        Áp dụng
+                                    </button>
+                                </div>
+                                <div id="promotionInfo" class="small text-muted mt-1" style="display: none;"></div>
+                                <div id="promotionError" class="small text-danger mt-1" style="display: none;"></div>
+                            </div>
+                            
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Phí vận chuyển:</span>
                                 <span id="orderShipping">Tính sau</span>
@@ -253,6 +296,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <strong>Tổng cộng:</strong>
                                 <strong id="orderTotal" class="text-danger">0₫</strong>
                             </div>
+                            
+                            <input type="hidden" name="promotion_id" id="appliedPromotionId" value="">
+                            <input type="hidden" name="discount_amount" id="appliedDiscountAmount" value="0">
                             
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary btn-lg" id="placeOrderBtn">
@@ -274,9 +320,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/shop.js?v=2"></script>
     <script>
+        let currentSubtotal = 0;
+        let currentDiscount = 0;
+        let cartProducts = [];
+        let cartData = {};
+        
         document.addEventListener('DOMContentLoaded', async function() {
-            const cart = JSON.parse(localStorage.getItem('shop_cart') || '{}');
-            const productIds = Object.keys(cart).filter(id => cart[id] > 0);
+            cartData = JSON.parse(localStorage.getItem('shop_cart') || '{}');
+            const productIds = Object.keys(cartData).filter(id => cartData[id] > 0);
             
             if (productIds.length === 0) {
                 window.location.href = 'cart.php';
@@ -289,24 +340,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 const data = await response.json();
                 
                 if (data.success) {
-                    renderOrderItems(data.products, cart);
+                    cartProducts = data.products;
+                    renderOrderItems(data.products, cartData);
+                    // Load available promotions
+                    loadPromotions();
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
+            
+            // Event listener for apply promotion button
+            document.getElementById('applyPromotionBtn').addEventListener('click', applyPromotion);
+            document.getElementById('promotionSelect').addEventListener('change', function() {
+                // Reset khi thay đổi selection
+                document.getElementById('promotionError').style.display = 'none';
+                document.getElementById('promotionInfo').style.display = 'none';
+            });
         });
+        
+        async function loadPromotions() {
+            try {
+                const response = await fetch('api/promotions.php?action=get_available');
+                const data = await response.json();
+                
+                if (data.success && data.promotions.length > 0) {
+                    const select = document.getElementById('promotionSelect');
+                    data.promotions.forEach(promo => {
+                        const option = document.createElement('option');
+                        option.value = promo.id;
+                        
+                        let discountText = promo.discount_type === 'percent' 
+                            ? `-${promo.discount_value}%` 
+                            : `-${formatPrice(promo.discount_value)}đ`;
+                        
+                        let conditionText = '';
+                        if (promo.min_amount > 0) {
+                            conditionText = ` (Đơn từ ${formatPrice(promo.min_amount)}đ)`;
+                        }
+                        if (promo.product_name) {
+                            conditionText = ` (${promo.product_name})`;
+                        }
+                        
+                        option.textContent = `${promo.name} ${discountText}${conditionText}`;
+                        option.dataset.promo = JSON.stringify(promo);
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading promotions:', error);
+            }
+        }
+        
+        async function applyPromotion() {
+            const select = document.getElementById('promotionSelect');
+            const promotionId = select.value;
+            const errorDiv = document.getElementById('promotionError');
+            const infoDiv = document.getElementById('promotionInfo');
+            
+            errorDiv.style.display = 'none';
+            infoDiv.style.display = 'none';
+            
+            if (!promotionId) {
+                // Remove promotion
+                currentDiscount = 0;
+                document.getElementById('appliedPromotionId').value = '';
+                document.getElementById('appliedDiscountAmount').value = '0';
+                updateTotals();
+                return;
+            }
+            
+            try {
+                const response = await fetch('api/promotions.php?action=apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        promotion_id: promotionId,
+                        cart_data: cartData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentDiscount = result.discount;
+                    document.getElementById('appliedPromotionId').value = promotionId;
+                    document.getElementById('appliedDiscountAmount').value = result.discount;
+                    
+                    if (result.discount > 0) {
+                        infoDiv.innerHTML = `<i class="bi bi-check-circle text-success"></i> Đã áp dụng: Giảm ${formatPrice(result.discount)}đ`;
+                        infoDiv.style.display = 'block';
+                    }
+                    
+                    updateTotals();
+                } else {
+                    errorDiv.textContent = result.message;
+                    errorDiv.style.display = 'block';
+                    currentDiscount = 0;
+                    document.getElementById('appliedPromotionId').value = '';
+                    document.getElementById('appliedDiscountAmount').value = '0';
+                    updateTotals();
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Lỗi khi áp dụng khuyến mãi';
+                errorDiv.style.display = 'block';
+            }
+        }
         
         function renderOrderItems(products, cart) {
             const container = document.getElementById('orderItems');
             let html = '';
-            let subtotal = 0;
+            currentSubtotal = 0;
             
             products.forEach(product => {
                 const qty = cart[product.id] || 0;
                 if (qty <= 0) return;
                 
                 const itemTotal = product.price * qty;
-                subtotal += itemTotal;
+                currentSubtotal += itemTotal;
                 
                 html += `
                     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
@@ -320,18 +470,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             });
             
             container.innerHTML = html;
-            
-            // Calculate totals
-            const shipping = subtotal >= 500000 ? 0 : 30000;
-            const tax = subtotal * 0.1;
-            const total = subtotal + shipping + tax;
+            updateTotals();
+        }
+        
+        function updateTotals() {
+            const subtotal = currentSubtotal;
+            const discount = currentDiscount;
+            const afterDiscount = subtotal - discount;
+            const shipping = afterDiscount >= 500000 ? 0 : 30000;
+            const tax = afterDiscount * 0.1;
+            const total = afterDiscount + shipping + tax;
             
             document.getElementById('orderSubtotal').textContent = formatPrice(subtotal) + '₫';
+            document.getElementById('discountAmount').textContent = discount > 0 ? `-${formatPrice(discount)}₫` : '0₫';
             document.getElementById('orderShipping').innerHTML = shipping === 0 
                 ? '<span class="text-success">Miễn phí</span>' 
                 : formatPrice(shipping) + '₫';
-            document.getElementById('orderTax').textContent = formatPrice(tax) + '₫';
-            document.getElementById('orderTotal').textContent = formatPrice(total) + '₫';
+            document.getElementById('orderTax').textContent = formatPrice(Math.round(tax)) + '₫';
+            document.getElementById('orderTotal').textContent = formatPrice(Math.round(total)) + '₫';
         }
         
         function formatPrice(price) {
@@ -351,6 +507,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             
             const formData = new FormData(this);
             formData.append('cart_data', localStorage.getItem('shop_cart') || '{}');
+            formData.append('promotion_id', document.getElementById('appliedPromotionId').value || '');
+            formData.append('discount_amount', document.getElementById('appliedDiscountAmount').value || '0');
             
             try {
                 const response = await fetch('checkout.php', {
