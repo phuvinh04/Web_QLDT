@@ -58,31 +58,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message_type = 'danger';
         } else {
             try {
-                // Update users table
-                $update_user = $pdo->prepare("UPDATE users SET full_name = ?, phone = ? WHERE id = ?");
-                $update_user->execute([$full_name, $phone, $user_id]);
+                // Convert empty phone to NULL to avoid duplicate key error
+                $phone_value = !empty($phone) ? $phone : null;
                 
-                // Update customers table
-                if ($customer) {
-                    $update_customer = $pdo->prepare("UPDATE customers SET name = ?, phone = ?, address = ?, city = ? WHERE id = ?");
-                    $update_customer->execute([$full_name, $phone, $address, $city, $customer['id']]);
-                } else {
-                    // Insert new customer record
-                    $insert_customer = $pdo->prepare("INSERT INTO customers (name, phone, email, address, city, status) VALUES (?, ?, ?, ?, ?, 'active')");
-                    $insert_customer->execute([$full_name, $phone, $user['email'], $address, $city]);
+                // Handle avatar upload
+                $avatar = $user['avatar']; // Keep current avatar by default
+                if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] == 0) {
+                    $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                    $file_type = $_FILES['avatar']['type'];
+                    $file_extension = strtolower(pathinfo($_FILES["avatar"]["name"], PATHINFO_EXTENSION));
+                    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    
+                    if (!in_array($file_type, $allowed_types) || !in_array($file_extension, $allowed_extensions)) {
+                        $message = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).';
+                        $message_type = 'danger';
+                    } elseif ($_FILES['avatar']['size'] > 5 * 1024 * 1024) { // 5MB
+                        $message = 'Kích thước file không được vượt quá 5MB.';
+                        $message_type = 'danger';
+                    } else {
+                        $target_dir = "../assets/uploads/avatars/";
+                        if (!file_exists($target_dir)) {
+                            mkdir($target_dir, 0777, true);
+                        }
+                        $new_filename = $user['username'] . "_" . time() . "." . $file_extension;
+                        $target_file = $target_dir . $new_filename;
+                        
+                        if (move_uploaded_file($_FILES["avatar"]["tmp_name"], $target_file)) {
+                            // Delete old avatar if not default
+                            if ($user['avatar'] && $user['avatar'] !== 'default-avatar.png' && file_exists($target_dir . $user['avatar'])) {
+                                unlink($target_dir . $user['avatar']);
+                            }
+                            $avatar = $new_filename;
+                        } else {
+                            $message = 'Không thể tải file lên. Vui lòng thử lại.';
+                            $message_type = 'danger';
+                        }
+                    }
                 }
                 
-                // Update session
-                $_SESSION['full_name'] = $full_name;
-                
-                $message = 'Cập nhật thông tin thành công!';
-                $message_type = 'success';
-                
-                // Refresh user data
-                $user_query->execute([$user_id]);
-                $user = $user_query->fetch();
-                $customer_query->execute([$user['email']]);
-                $customer = $customer_query->fetch();
+                // Only update if no avatar upload error
+                if (!isset($message) || $message_type !== 'danger') {
+                    // Update users table
+                    $update_user = $pdo->prepare("UPDATE users SET full_name = ?, phone = ?, avatar = ? WHERE id = ?");
+                    $update_user->execute([$full_name, $phone_value, $avatar, $user_id]);
+                    
+                    // Update customers table
+                    if ($customer) {
+                        $update_customer = $pdo->prepare("UPDATE customers SET name = ?, phone = ?, address = ?, city = ? WHERE id = ?");
+                        $update_customer->execute([$full_name, $phone_value, $address, $city, $customer['id']]);
+                    } else {
+                        // Insert new customer record
+                        $insert_customer = $pdo->prepare("INSERT INTO customers (name, phone, email, address, city, status) VALUES (?, ?, ?, ?, ?, 'active')");
+                        $insert_customer->execute([$full_name, $phone_value, $user['email'], $address, $city]);
+                    }
+                    
+                    // Update session
+                    $_SESSION['full_name'] = $full_name;
+                    
+                    $message = 'Cập nhật thông tin thành công!';
+                    $message_type = 'success';
+                    
+                    // Refresh user data
+                    $user_query->execute([$user_id]);
+                    $user = $user_query->fetch();
+                    $customer_query->execute([$user['email']]);
+                    $customer = $customer_query->fetch();
+                }
                 
             } catch (Exception $e) {
                 $message = 'Có lỗi xảy ra: ' . $e->getMessage();
@@ -94,6 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
         
+        // Password pattern: at least 8 chars, uppercase, lowercase, number, special char
+        $password_pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/';
+        
         if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
             $message = 'Vui lòng điền đầy đủ thông tin!';
             $message_type = 'danger';
@@ -103,8 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($new_password !== $confirm_password) {
             $message = 'Mật khẩu mới không khớp!';
             $message_type = 'danger';
-        } elseif (strlen($new_password) < 8) {
-            $message = 'Mật khẩu mới phải có ít nhất 8 ký tự!';
+        } elseif (!preg_match($password_pattern, $new_password)) {
+            $message = 'Mật khẩu quá yếu! Cần ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.';
             $message_type = 'danger';
         } else {
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
@@ -168,8 +212,24 @@ $stats = $order_stats->fetch();
             <div class="col-lg-3 mb-4">
                 <div class="card">
                     <div class="card-body text-center">
-                        <div class="avatar-circle mx-auto mb-3">
-                            <i class="bi bi-person-circle" style="font-size: 4rem; color: var(--primary-color);"></i>
+                        <div class="avatar-circle mx-auto mb-3" style="width: 120px; height: 120px; overflow: hidden; border-radius: 50%; border: 3px solid var(--primary-color);">
+                            <?php 
+                            $avatar_path = $user['avatar'] ?? 'default-avatar.png';
+                            // Check if avatar is a URL (Google avatar) or local file
+                            if (filter_var($avatar_path, FILTER_VALIDATE_URL)) {
+                                // Google avatar - use URL directly
+                                $avatar_url = $avatar_path;
+                            } else {
+                                // Local avatar
+                                $avatar_url = '../assets/uploads/avatars/' . $avatar_path;
+                            }
+                            
+                            if (filter_var($avatar_path, FILTER_VALIDATE_URL) || (file_exists($avatar_url) && $avatar_path !== 'default-avatar.png')): 
+                            ?>
+                                <img src="<?php echo htmlspecialchars($avatar_url); ?>" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <i class="bi bi-person-circle" style="font-size: 7rem; color: var(--primary-color); line-height: 120px;"></i>
+                            <?php endif; ?>
                         </div>
                         <h5 class="mb-1"><?php echo htmlspecialchars($user['full_name']); ?></h5>
                         <p class="text-muted small mb-3"><?php echo htmlspecialchars($user['email']); ?></p>
@@ -248,8 +308,40 @@ $stats = $order_stats->fetch();
                                 <h5 class="mb-0"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h5>
                             </div>
                             <div class="card-body">
-                                <form method="POST">
+                                <form method="POST" enctype="multipart/form-data">
                                     <input type="hidden" name="action" value="update_profile">
+                                    
+                                    <!-- Avatar Upload -->
+                                    <div class="mb-4 text-center">
+                                        <label class="form-label d-block">Ảnh đại diện</label>
+                                        <div class="avatar-preview mx-auto mb-3" style="width: 150px; height: 150px; overflow: hidden; border-radius: 50%; border: 3px solid #ddd; position: relative;">
+                                            <?php 
+                                            $avatar_path = $user['avatar'] ?? 'default-avatar.png';
+                                            // Check if avatar is a URL (Google avatar) or local file
+                                            if (filter_var($avatar_path, FILTER_VALIDATE_URL)) {
+                                                // Google avatar - use URL directly
+                                                $avatar_url = $avatar_path;
+                                                $is_url = true;
+                                            } else {
+                                                // Local avatar
+                                                $avatar_url = '../assets/uploads/avatars/' . $avatar_path;
+                                                $is_url = false;
+                                            }
+                                            
+                                            if (filter_var($avatar_path, FILTER_VALIDATE_URL) || (file_exists($avatar_url) && $avatar_path !== 'default-avatar.png')): 
+                                            ?>
+                                                <img src="<?php echo htmlspecialchars($avatar_url); ?>" alt="Avatar" id="avatarPreviewImg" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            <?php else: ?>
+                                                <i class="bi bi-person-circle" id="avatarPreviewIcon" style="font-size: 9rem; color: #6c757d; line-height: 150px;"></i>
+                                            <?php endif; ?>
+                                        </div>
+                                        <input type="file" name="avatar" id="avatarInput" class="form-control d-inline-block" style="max-width: 300px;" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                        <small class="text-muted d-block mt-1">JPG, PNG, GIF, WEBP (Tối đa 5MB)</small>
+                                        <?php if (filter_var($avatar_path, FILTER_VALIDATE_URL)): ?>
+                                            <small class="text-info d-block mt-1"><i class="bi bi-info-circle"></i> Đang dùng ảnh từ Google. Upload ảnh mới để thay đổi.</small>
+                                        <?php endif; ?>
+                                    </div>
+                                    
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
@@ -294,20 +386,42 @@ $stats = $order_stats->fetch();
                                 <h5 class="mb-0"><i class="bi bi-key me-2"></i>Đổi mật khẩu</h5>
                             </div>
                             <div class="card-body">
-                                <form method="POST">
+                                <form method="POST" id="changePasswordForm">
                                     <input type="hidden" name="action" value="change_password">
                                     <div class="mb-3">
                                         <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                                        <input type="password" name="current_password" class="form-control" required>
+                                        <div class="input-group">
+                                            <input type="password" name="current_password" id="current_password" class="form-control" required>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('current_password', this)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
-                                        <input type="password" name="new_password" class="form-control" required minlength="8">
-                                        <small class="text-muted">Tối thiểu 8 ký tự</small>
+                                        <div class="input-group">
+                                            <input type="password" name="new_password" id="new_password" class="form-control" required>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('new_password', this)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <ul class="list-unstyled mt-2 mb-0 small text-muted">
+                                            <li id="rule-length"><i class="bi bi-x-circle"></i> Tối thiểu 8 ký tự</li>
+                                            <li id="rule-upper"><i class="bi bi-x-circle"></i> Chữ cái viết hoa (A-Z)</li>
+                                            <li id="rule-lower"><i class="bi bi-x-circle"></i> Chữ cái thường (a-z)</li>
+                                            <li id="rule-number"><i class="bi bi-x-circle"></i> Số (0-9)</li>
+                                            <li id="rule-special"><i class="bi bi-x-circle"></i> Ký tự đặc biệt (!@#$...)</li>
+                                        </ul>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                                        <input type="password" name="confirm_password" class="form-control" required>
+                                        <div class="input-group">
+                                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('confirm_password', this)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted" id="match-message"></small>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-check-lg me-1"></i> Đổi mật khẩu
@@ -325,5 +439,155 @@ $stats = $order_stats->fetch();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/shop.js"></script>
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Avatar preview
+            const avatarInput = document.getElementById('avatarInput');
+            if (avatarInput) {
+                avatarInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Validate file type
+                        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                        if (!allowedTypes.includes(file.type)) {
+                            alert('Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP)');
+                            avatarInput.value = '';
+                            return;
+                        }
+                        
+                        // Validate file size (5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            alert('Kích thước file không được vượt quá 5MB');
+                            avatarInput.value = '';
+                            return;
+                        }
+                        
+                        // Preview image
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const preview = document.querySelector('.avatar-preview');
+                            const icon = document.getElementById('avatarPreviewIcon');
+                            const img = document.getElementById('avatarPreviewImg');
+                            
+                            if (icon) {
+                                icon.style.display = 'none';
+                            }
+                            
+                            if (img) {
+                                img.src = e.target.result;
+                                img.style.display = 'block';
+                            } else {
+                                const newImg = document.createElement('img');
+                                newImg.id = 'avatarPreviewImg';
+                                newImg.src = e.target.result;
+                                newImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block;';
+                                preview.appendChild(newImg);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            const passwordInput = document.getElementById('new_password');
+            const confirmInput = document.getElementById('confirm_password');
+            const matchMessage = document.getElementById('match-message');
+            
+            const rules = {
+                'rule-length': /.{8,}/,
+                'rule-upper': /[A-Z]/,
+                'rule-lower': /[a-z]/,
+                'rule-number': /[0-9]/,
+                'rule-special': /[\W_]/
+            };
+
+            // Real-time password strength validation
+            passwordInput.addEventListener('input', function() {
+                const val = this.value;
+                for (const [id, regex] of Object.entries(rules)) {
+                    const element = document.getElementById(id);
+                    const icon = element.querySelector('i');
+                    if (regex.test(val)) {
+                        element.classList.remove('text-danger');
+                        element.classList.add('text-success');
+                        icon.classList.remove('bi-x-circle');
+                        icon.classList.add('bi-check-circle-fill');
+                    } else {
+                        element.classList.remove('text-success');
+                        if(val.length > 0) {
+                            element.classList.add('text-danger');
+                        } else {
+                            element.classList.remove('text-danger');
+                        }
+                        icon.classList.remove('bi-check-circle-fill');
+                        icon.classList.add('bi-x-circle');
+                    }
+                }
+                
+                // Check confirm password match
+                if (confirmInput.value) {
+                    checkPasswordMatch();
+                }
+            });
+
+            // Real-time password match validation
+            confirmInput.addEventListener('input', checkPasswordMatch);
+
+            function checkPasswordMatch() {
+                if (confirmInput.value === '') {
+                    matchMessage.textContent = '';
+                    matchMessage.className = 'text-muted';
+                } else if (confirmInput.value === passwordInput.value) {
+                    matchMessage.textContent = '✓ Mật khẩu khớp';
+                    matchMessage.className = 'text-success';
+                } else {
+                    matchMessage.textContent = '✗ Mật khẩu không khớp';
+                    matchMessage.className = 'text-danger';
+                }
+            }
+
+            // Form validation before submit
+            document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+                const password = passwordInput.value;
+                const confirm = confirmInput.value;
+                
+                // Check all rules
+                let allRulesPassed = true;
+                for (const [id, regex] of Object.entries(rules)) {
+                    if (!regex.test(password)) {
+                        allRulesPassed = false;
+                        break;
+                    }
+                }
+                
+                if (!allRulesPassed) {
+                    e.preventDefault();
+                    alert('Mật khẩu mới không đủ mạnh! Vui lòng đáp ứng tất cả các yêu cầu.');
+                    return false;
+                }
+                
+                if (password !== confirm) {
+                    e.preventDefault();
+                    alert('Mật khẩu xác nhận không khớp!');
+                    return false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

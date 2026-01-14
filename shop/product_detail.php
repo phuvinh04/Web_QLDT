@@ -127,7 +127,7 @@ $GLOBALS['base_url'] = '../';
                         <span class="text-muted">Số lượng:</span>
                         <div class="btn-group">
                             <button type="button" class="btn btn-outline-secondary px-3" onclick="changeQty(-1)">−</button>
-                            <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['quantity']; ?>" class="form-control text-center border-secondary" style="width: 60px; border-radius: 0;">
+                            <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['quantity']; ?>" class="form-control text-center border-secondary" style="width: 80px; border-radius: 0;">
                             <button type="button" class="btn btn-outline-secondary px-3" onclick="changeQty(1)">+</button>
                         </div>
                     </div>
@@ -233,23 +233,66 @@ $GLOBALS['base_url'] = '../';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/shop.js?v=2"></script>
     <script>
+        const maxQuantity = <?php echo $product['quantity']; ?>;
+        
+        // Validate quantity input
+        document.getElementById('quantity').addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                this.value = 1;
+            } else if (value > maxQuantity) {
+                this.value = maxQuantity;
+                showToast('error', `Số lượng tối đa là ${maxQuantity}`);
+            }
+        });
+        
+        // Validate on blur (when user leaves the input)
+        document.getElementById('quantity').addEventListener('blur', function() {
+            if (this.value === '' || parseInt(this.value) < 1) {
+                this.value = 1;
+            }
+        });
+        
         function changeQty(delta) {
             const input = document.getElementById('quantity');
             let value = parseInt(input.value) + delta;
-            const max = parseInt(input.max);
             if (value < 1) value = 1;
-            if (value > max) value = max;
+            if (value > maxQuantity) {
+                value = maxQuantity;
+                if (delta > 0) {
+                    showToast('error', `Số lượng tối đa là ${maxQuantity}`);
+                }
+            }
             input.value = value;
         }
         
         function addToCartDetail(productId) {
             const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            if (quantity > maxQuantity) {
+                showToast('error', `Số lượng tối đa là ${maxQuantity}`);
+                document.getElementById('quantity').value = maxQuantity;
+                return;
+            }
             shopManager.addToCart(productId, quantity);
         }
         
         function buyNowDetail(productId) {
             const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            if (quantity > maxQuantity) {
+                showToast('error', `Số lượng tối đa là ${maxQuantity}`);
+                document.getElementById('quantity').value = maxQuantity;
+                return;
+            }
             shopManager.buyNow(productId, quantity);
+        }
+        
+        function showToast(type, message) {
+            const toastId = type === 'error' ? 'errorToast' : 'successToast';
+            const toastBodyId = type === 'error' ? 'errorToastBody' : 'successToastBody';
+            
+            document.getElementById(toastBodyId).textContent = message;
+            const toast = new bootstrap.Toast(document.getElementById(toastId));
+            toast.show();
         }
     </script>
 </body>

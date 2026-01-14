@@ -33,6 +33,11 @@ if (isset($_GET['code'])) {
         if ($user) {
             // TRƯỜNG HỢP A: Đã tồn tại Google ID
             if ($user['status'] === 'active') {
+                // Cập nhật avatar mới nhất từ Google
+                $update_avatar = $conn->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+                $update_avatar->bind_param("si", $avatar, $user['id']);
+                $update_avatar->execute();
+                
                 // Tự động tạo customer nếu là khách hàng và chưa có
                 if ($user['role_id'] == 5) {
                     $check_customer = $conn->prepare("SELECT id FROM customers WHERE email = ?");
@@ -54,7 +59,7 @@ if (isset($_GET['code'])) {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role_id'] = $user['role_id'];
-                $_SESSION['avatar'] = $user['avatar'];
+                $_SESSION['avatar'] = $avatar; // Dùng avatar mới từ Google
                 
                 // Redirect based on role
                 if ($user['role_id'] == 5) {
