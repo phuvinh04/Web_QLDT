@@ -84,10 +84,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $target_file = $target_dir . $new_filename;
                         
                         if (move_uploaded_file($_FILES["avatar"]["tmp_name"], $target_file)) {
-                            // Delete old avatar if not default
-                            if ($user['avatar'] && $user['avatar'] !== 'default-avatar.png' && file_exists($target_dir . $user['avatar'])) {
+                            // Delete old avatar if it's a local file (not Google URL or default)
+                            if ($user['avatar'] && 
+                                $user['avatar'] !== 'default-avatar.png' && 
+                                !filter_var($user['avatar'], FILTER_VALIDATE_URL) && 
+                                file_exists($target_dir . $user['avatar'])) {
                                 unlink($target_dir . $user['avatar']);
                             }
+                            // Set new avatar filename (this will replace Google avatar URL)
                             $avatar = $new_filename;
                         } else {
                             $message = 'Không thể tải file lên. Vui lòng thử lại.';
@@ -114,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Update session
                     $_SESSION['full_name'] = $full_name;
+                    $_SESSION['avatar'] = $avatar;
                     
                     $message = 'Cập nhật thông tin thành công!';
                     $message_type = 'success';

@@ -59,8 +59,26 @@ if (!function_exists('env')) {
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <?php if (!empty($_SESSION['avatar']) && strpos($_SESSION['avatar'], 'http') === 0): ?>
-                                <img src="<?php echo $_SESSION['avatar']; ?>" alt="" 
+                            <?php 
+                            $avatar_display = $_SESSION['avatar'] ?? '';
+                            // Add cache busting for local avatars
+                            if (!empty($avatar_display)) {
+                                if (strpos($avatar_display, 'http') === 0) {
+                                    // Google avatar - use as is
+                                    $avatar_src = $avatar_display;
+                                } else {
+                                    // Local avatar - add timestamp to prevent cache
+                                    $avatar_path = '../assets/uploads/avatars/' . $avatar_display;
+                                    $cache_buster = file_exists($avatar_path) ? '?v=' . filemtime($avatar_path) : '';
+                                    $avatar_src = $avatar_path . $cache_buster;
+                                }
+                            }
+                            
+                            if (!empty($avatar_display) && strpos($avatar_display, 'http') === 0): ?>
+                                <img src="<?php echo htmlspecialchars($avatar_display); ?>" alt="" 
+                                     style="width: 24px; height: 24px; border-radius: 50%; margin-right: 6px; object-fit: cover;">
+                            <?php elseif (!empty($avatar_display) && $avatar_display !== 'default-avatar.png'): ?>
+                                <img src="<?php echo htmlspecialchars($avatar_src); ?>" alt="" 
                                      style="width: 24px; height: 24px; border-radius: 50%; margin-right: 6px; object-fit: cover;">
                             <?php else: ?>
                                 <i class="bi bi-person-circle"></i>

@@ -33,10 +33,20 @@ if (isset($_GET['code'])) {
         if ($user) {
             // TRƯỜNG HỢP A: Đã tồn tại Google ID
             if ($user['status'] === 'active') {
-                // Cập nhật avatar mới nhất từ Google
-                $update_avatar = $conn->prepare("UPDATE users SET avatar = ? WHERE id = ?");
-                $update_avatar->bind_param("si", $avatar, $user['id']);
-                $update_avatar->execute();
+                // Chỉ cập nhật avatar từ Google nếu user chưa có avatar local (vẫn dùng avatar Google hoặc default)
+                $should_update_avatar = empty($user['avatar']) || 
+                                       $user['avatar'] === 'default-avatar.png' || 
+                                       filter_var($user['avatar'], FILTER_VALIDATE_URL);
+                
+                if ($should_update_avatar) {
+                    $update_avatar = $conn->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+                    $update_avatar->bind_param("si", $avatar, $user['id']);
+                    $update_avatar->execute();
+                    $user_avatar = $avatar;
+                } else {
+                    // Giữ avatar local hiện tại
+                    $user_avatar = $user['avatar'];
+                }
                 
                 // Tự động tạo customer nếu là khách hàng và chưa có
                 if ($user['role_id'] == 5) {
@@ -59,7 +69,7 @@ if (isset($_GET['code'])) {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role_id'] = $user['role_id'];
-                $_SESSION['avatar'] = $avatar; // Dùng avatar mới từ Google
+                $_SESSION['avatar'] = $user_avatar; // Dùng avatar đã xác định
                 
                 // Redirect based on role
                 if ($user['role_id'] == 5) {
@@ -84,9 +94,20 @@ if (isset($_GET['code'])) {
             $user_by_email = $result->fetch_assoc();
 
             if ($user_by_email) {
-                // Email đã tồn tại -> Cập nhật Google ID và Avatar
-                $update = $conn->prepare("UPDATE users SET google_id = ?, avatar = ? WHERE id = ?");
-                $update->bind_param("ssi", $google_id, $avatar, $user_by_email['id']);
+                // Email đã tồn tại -> Chỉ cập nhật Google ID, giữ nguyên avatar nếu đã có avatar local
+                $should_update_avatar = empty($user_by_email['avatar']) || 
+                                       $user_by_email['avatar'] === 'default-avatar.png' || 
+                                       filter_var($user_by_email['avatar'], FILTER_VALIDATE_URL);
+                
+                if ($should_update_avatar) {
+                    $update = $conn->prepare("UPDATE users SET google_id = ?, avatar = ? WHERE id = ?");
+                    $update->bind_param("ssi", $google_id, $avatar, $user_by_email['id']);
+                    $user_avatar = $avatar;
+                } else {
+                    $update = $conn->prepare("UPDATE users SET google_id = ? WHERE id = ?");
+                    $update->bind_param("si", $google_id, $user_by_email['id']);
+                    $user_avatar = $user_by_email['avatar'];
+                }
                 $update->execute();
 
                 // Kiểm tra lại status
@@ -111,7 +132,7 @@ if (isset($_GET['code'])) {
                     $_SESSION['username'] = $user_by_email['username'];
                     $_SESSION['full_name'] = $user_by_email['full_name'];
                     $_SESSION['role_id'] = $user_by_email['role_id'];
-                    $_SESSION['avatar'] = $avatar; // Dùng avatar mới từ Google
+                    $_SESSION['avatar'] = $user_avatar; // Dùng avatar đã xác định
                     
                     // Redirect based on role
                     if ($user_by_email['role_id'] == 5) {
