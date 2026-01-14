@@ -100,10 +100,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Chỉ thực hiện insert nếu không có lỗi avatar
             if (empty($errors)) {
                 if ($stmt->execute()) {
-                    // Thêm khách hàng vào bảng customers để hiển thị bên quản trị
+                    $new_user_id = $conn->insert_id;
+                    
+                    // Tự động tạo khách hàng trong bảng customers để quản lý đơn hàng
                     $customer_stmt = $conn->prepare("INSERT INTO customers (name, phone, email, status) VALUES (?, ?, ?, 'active')");
                     $customer_stmt->bind_param("sss", $full_name, $phone, $email);
-                    $customer_stmt->execute();
+                    
+                    if (!$customer_stmt->execute()) {
+                        // Log lỗi nhưng vẫn cho đăng ký thành công
+                        error_log("Không thể tạo customer cho user_id: $new_user_id - " . $conn->error);
+                    }
                     
                     $success = "Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.";
                 } else {

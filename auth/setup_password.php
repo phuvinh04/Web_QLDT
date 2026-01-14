@@ -57,6 +57,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $get_user->execute();
             $user_info = $get_user->get_result()->fetch_assoc();
             
+            // Tự động tạo customer nếu là khách hàng (role_id = 5)
+            if ($user_info['role_id'] == 5) {
+                // Kiểm tra xem đã có customer với email này chưa
+                $check_customer = $conn->prepare("SELECT id FROM customers WHERE email = ?");
+                $check_customer->bind_param("s", $user_info['email']);
+                $check_customer->execute();
+                
+                if ($check_customer->get_result()->num_rows == 0) {
+                    // Chưa có -> Tạo mới
+                    $create_customer = $conn->prepare("INSERT INTO customers (name, phone, email, status) VALUES (?, ?, ?, 'active')");
+                    $create_customer->bind_param("sss", $user_info['full_name'], $user_info['phone'], $user_info['email']);
+                    
+                    if (!$create_customer->execute()) {
+                        error_log("Không thể tạo customer cho user_id: $user_id - " . $conn->error);
+                    }
+                }
+            }
+            
             $_SESSION['user_id'] = $user_info['id'];
             $_SESSION['username'] = $user_info['username'];
             $_SESSION['full_name'] = $user_info['full_name'];

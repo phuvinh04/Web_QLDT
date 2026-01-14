@@ -123,15 +123,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         $pdo->beginTransaction();
         
+        // Tìm hoặc tạo customer_id dựa trên email của user
+        $customer_id = null;
+        if (!empty($user['email'])) {
+            // Tìm customer theo email
+            $customer_stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ?");
+            $customer_stmt->execute([$user['email']]);
+            $customer = $customer_stmt->fetch();
+            
+            if ($customer) {
+                $customer_id = $customer['id'];
+            } else {
+                // Tạo customer mới nếu chưa có
+                $create_customer = $pdo->prepare("
+                    INSERT INTO customers (name, phone, email, address, status) 
+                    VALUES (?, ?, ?, ?, 'active')
+                ");
+                $create_customer->execute([
+                    $full_name,
+                    $phone,
+                    $user['email'],
+                    $address
+                ]);
+                $customer_id = $pdo->lastInsertId();
+            }
+        }
+        
         // Create order
         $order_code = 'HD' . date('YmdHis') . rand(100, 999);
         
         $order_stmt = $pdo->prepare("
-            INSERT INTO orders (order_number, user_id, subtotal, discount, tax, total_amount, payment_method, notes, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'cod', ?, 'pending')
+            INSERT INTO orders (order_number, customer_id, user_id, subtotal, discount, tax, total_amount, payment_method, notes, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'cod', ?, 'pending')
         ");
         $order_stmt->execute([
-            $order_code, $user_id, $subtotal, $final_discount, $tax, $total,
+            $order_code, $customer_id, $user_id, $subtotal, $final_discount, $tax, $total,
             "Tên: $full_name\nSĐT: $phone\nĐịa chỉ: $address\nGhi chú: $note"
         ]);
         $order_id = $pdo->lastInsertId();

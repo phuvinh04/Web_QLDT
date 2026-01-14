@@ -33,6 +33,22 @@ if (isset($_GET['code'])) {
         if ($user) {
             // TRƯỜNG HỢP A: Đã tồn tại Google ID
             if ($user['status'] === 'active') {
+                // Tự động tạo customer nếu là khách hàng và chưa có
+                if ($user['role_id'] == 5) {
+                    $check_customer = $conn->prepare("SELECT id FROM customers WHERE email = ?");
+                    $check_customer->bind_param("s", $user['email']);
+                    $check_customer->execute();
+                    
+                    if ($check_customer->get_result()->num_rows == 0) {
+                        $create_customer = $conn->prepare("INSERT INTO customers (name, phone, email, status) VALUES (?, ?, ?, 'active')");
+                        $create_customer->bind_param("sss", $user['full_name'], $user['phone'], $user['email']);
+                        
+                        if (!$create_customer->execute()) {
+                            error_log("Không thể tạo customer cho user_id: " . $user['id'] . " - " . $conn->error);
+                        }
+                    }
+                }
+                
                 // Đăng nhập ngay
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
@@ -70,6 +86,22 @@ if (isset($_GET['code'])) {
 
                 // Kiểm tra lại status
                 if ($user_by_email['status'] === 'active') {
+                    // Tự động tạo customer nếu là khách hàng và chưa có
+                    if ($user_by_email['role_id'] == 5) {
+                        $check_customer = $conn->prepare("SELECT id FROM customers WHERE email = ?");
+                        $check_customer->bind_param("s", $user_by_email['email']);
+                        $check_customer->execute();
+                        
+                        if ($check_customer->get_result()->num_rows == 0) {
+                            $create_customer = $conn->prepare("INSERT INTO customers (name, phone, email, status) VALUES (?, ?, ?, 'active')");
+                            $create_customer->bind_param("sss", $user_by_email['full_name'], $user_by_email['phone'], $user_by_email['email']);
+                            
+                            if (!$create_customer->execute()) {
+                                error_log("Không thể tạo customer cho user_id: " . $user_by_email['id'] . " - " . $conn->error);
+                            }
+                        }
+                    }
+                    
                     $_SESSION['user_id'] = $user_by_email['id'];
                     $_SESSION['username'] = $user_by_email['username'];
                     $_SESSION['full_name'] = $user_by_email['full_name'];
