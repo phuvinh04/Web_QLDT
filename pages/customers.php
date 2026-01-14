@@ -264,7 +264,7 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
             <?php if ($canEdit): ?>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openAddModal()">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm khách hàng
               </button>
             </div>
@@ -272,10 +272,62 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
           </form>
         </div>
 
-        <div style="margin-bottom: 16px; color: var(--text-muted);">
+        <!-- Form Thêm/Sửa Khách hàng -->
+        <div class="card" id="customerFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm khách hàng mới</h4>
+            <form id="customerForm">
+              <input type="hidden" id="customerId" name="id">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Họ tên <span style="color:red">*</span></label>
+                  <input type="text" id="customerName" name="name" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số điện thoại</label>
+                  <input type="text" id="customerPhone" name="phone" class="form-control" placeholder="0912345678">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="customerEmail" name="email" class="form-control" placeholder="email@example.com">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Thành phố</label>
+                  <input type="text" id="customerCity" name="city" class="form-control" placeholder="TP. Hồ Chí Minh">
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label">Địa chỉ</label>
+                  <input type="text" id="customerAddress" name="address" class="form-control" placeholder="Số nhà, đường, phường/xã...">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Trạng thái</label>
+                  <select id="customerStatus" name="status" class="form-control">
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                  </select>
+                </div>
+                <div class="col-md-4" id="pointsGroup" style="display: none;">
+                  <label class="form-label">Điểm tích lũy</label>
+                  <input type="number" id="customerPoints" name="loyalty_points" class="form-control" min="0">
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" class="btn btn-primary" onclick="saveCustomer()">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px; color: var(--text-muted);" id="customerCount">
           Hiển thị <?php echo count($customers); ?> / <?php echo $totalCustomers; ?> khách hàng
         </div>
 
+        <div id="customerListContainer">
         <?php if (empty($customers)): ?>
         <div class="empty-state">
           <i class="bi bi-people"></i>
@@ -341,9 +393,10 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
           </tbody>
         </table>
         <?php endif; ?>
+        </div>
 
         <?php if ($totalPages > 1): ?>
-        <div class="pagination">
+        <div class="pagination" id="paginationContainer">
           <?php $queryBase = buildQueryString($filterParams); $queryBase = $queryBase ? '&' . $queryBase : ''; ?>
           <?php if ($currentPage > 1): ?>
           <a href="?page=<?php echo $currentPage - 1; ?><?php echo $queryBase; ?>"><button><i class="bi bi-chevron-left"></i></button></a>
@@ -358,60 +411,6 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
         <?php endif; ?>
       </div>
       <?php include '../components/footer.php'; ?>
-    </div>
-  </div>
-
-  <!-- Modal Thêm/Sửa -->
-  <div class="modal-overlay" id="customerModal">
-    <div class="modal" style="max-width: 600px; width: 90%;">
-      <div class="modal-header">
-        <h3 id="modalTitle">Thêm khách hàng mới</h3>
-        <button class="action-btn" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="customerForm">
-          <input type="hidden" id="customerId" name="id">
-          <div class="form-group">
-            <label>Họ tên <span style="color:red">*</span></label>
-            <input type="text" id="customerName" name="name" class="form-control" required>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Số điện thoại</label>
-              <input type="text" id="customerPhone" name="phone" class="form-control" placeholder="0912345678">
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="customerEmail" name="email" class="form-control" placeholder="email@example.com">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Địa chỉ</label>
-            <input type="text" id="customerAddress" name="address" class="form-control" placeholder="Số nhà, đường, phường/xã...">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Thành phố</label>
-              <input type="text" id="customerCity" name="city" class="form-control" placeholder="TP. Hồ Chí Minh">
-            </div>
-            <div class="form-group">
-              <label>Trạng thái</label>
-              <select id="customerStatus" name="status" class="form-control">
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Ngừng hoạt động</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group" id="pointsGroup" style="display: none;">
-            <label>Điểm tích lũy</label>
-            <input type="number" id="customerPoints" name="loyalty_points" class="form-control" min="0">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" onclick="saveCustomer()"><i class="bi bi-check-lg"></i> Lưu</button>
-      </div>
     </div>
   </div>
 
@@ -469,18 +468,26 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
       setTimeout(() => alert.remove(), 5000);
     }
 
-    function openAddModal() {
-      const modal = document.getElementById('customerModal');
-      if (!modal) return;
-      document.getElementById('modalTitle').textContent = 'Thêm khách hàng mới';
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm khách hàng mới';
       document.getElementById('customerForm').reset();
       document.getElementById('customerId').value = '';
       document.getElementById('pointsGroup').style.display = 'none';
-      modal.classList.add('show');
+      document.getElementById('customerFormCard').style.display = 'block';
+      document.getElementById('customerListContainer').style.display = 'none';
+      document.getElementById('customerCount').style.display = 'none';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = 'none';
+      document.getElementById('customerName').focus();
     }
 
-    function closeModal() {
-      document.getElementById('customerModal')?.classList.remove('show');
+    function hideForm() {
+      document.getElementById('customerFormCard').style.display = 'none';
+      document.getElementById('customerListContainer').style.display = '';
+      document.getElementById('customerCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
+      document.getElementById('customerForm').reset();
     }
 
     function closeViewModal() {
@@ -552,7 +559,7 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
         const result = await response.json();
         if (result.success) {
           const c = result.data;
-          document.getElementById('modalTitle').textContent = 'Sửa thông tin khách hàng';
+          document.getElementById('formTitle').textContent = 'Sửa thông tin khách hàng';
           document.getElementById('customerId').value = c.id;
           document.getElementById('customerName').value = c.name;
           document.getElementById('customerPhone').value = c.phone || '';
@@ -562,7 +569,12 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
           document.getElementById('customerStatus').value = c.status;
           document.getElementById('customerPoints').value = c.loyalty_points || 0;
           document.getElementById('pointsGroup').style.display = 'block';
-          document.getElementById('customerModal').classList.add('show');
+          document.getElementById('customerFormCard').style.display = 'block';
+          document.getElementById('customerListContainer').style.display = 'none';
+          document.getElementById('customerCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
+          document.getElementById('customerName').focus();
         } else {
           showAlert(result.message, 'danger');
         }
@@ -605,7 +617,7 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
         
         if (result.success) {
           showAlert(result.message, 'success');
-          closeModal();
+          hideForm();
           setTimeout(() => location.reload(), 1000);
         } else {
           showAlert(result.message, 'danger');

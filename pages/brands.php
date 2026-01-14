@@ -119,11 +119,39 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
             <?php if ($canEdit): ?>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button class="btn btn-primary" onclick="openAddModal()">
+              <button class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm thương hiệu
               </button>
             </div>
             <?php endif; ?>
+          </div>
+        </div>
+
+        <!-- Form Thêm/Sửa -->
+        <div class="card" id="brandFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm thương hiệu mới</h4>
+            <form id="brandForm">
+              <input type="hidden" id="brandId" name="id">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên thương hiệu <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="brandName" name="name" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mô tả</label>
+                  <textarea class="form-control" id="brandDescription" name="description" rows="1"></textarea>
+                </div>
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -157,7 +185,7 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
                     <i class="bi bi-eye"></i>
                   </a>
                   <?php if ($canEdit): ?>
-                  <button class="action-btn edit" onclick="openEditModal(<?php echo $brand['id']; ?>, '<?php echo htmlspecialchars(addslashes($brand['name'])); ?>', '<?php echo htmlspecialchars(addslashes($brand['description'] ?? '')); ?>')" title="Sửa">
+                  <button class="action-btn edit" onclick="showEditForm(<?php echo $brand['id']; ?>, '<?php echo htmlspecialchars(addslashes($brand['name'])); ?>', '<?php echo htmlspecialchars(addslashes($brand['description'] ?? '')); ?>')" title="Sửa">
                     <i class="bi bi-pencil"></i>
                   </button>
                   <button class="action-btn delete" onclick="deleteBrand(<?php echo $brand['id']; ?>, '<?php echo htmlspecialchars(addslashes($brand['name'])); ?>')" title="Xóa">
@@ -176,33 +204,6 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
     </div>
   </div>
 
-  <!-- Modal Thêm/Sửa thương hiệu -->
-  <div class="custom-modal-overlay" id="brandModal">
-    <div class="custom-modal-box">
-      <div class="custom-modal-header">
-        <h5 id="modalTitle">Thêm thương hiệu</h5>
-        <button type="button" class="custom-modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <form id="brandForm">
-        <div class="custom-modal-body">
-          <input type="hidden" id="brandId" name="id">
-          <div class="mb-3">
-            <label class="form-label">Tên thương hiệu <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="brandName" name="name" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Mô tả</label>
-            <textarea class="form-control" id="brandDescription" name="description" rows="3"></textarea>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary">Lưu</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <?php include '../components/scripts.php'; ?>
   <script>
     function filterBrands() {
@@ -213,30 +214,31 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
       });
     }
     
-    function openAddModal() {
-      document.getElementById('modalTitle').textContent = 'Thêm thương hiệu';
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm thương hiệu mới';
       document.getElementById('brandId').value = '';
       document.getElementById('brandName').value = '';
       document.getElementById('brandDescription').value = '';
-      document.getElementById('brandModal').classList.add('show');
+      document.getElementById('brandFormCard').style.display = 'block';
+      document.getElementById('brandsGrid').style.display = 'none';
+      document.getElementById('brandName').focus();
     }
     
-    function openEditModal(id, name, description) {
-      document.getElementById('modalTitle').textContent = 'Sửa thương hiệu';
+    function showEditForm(id, name, description) {
+      document.getElementById('formTitle').textContent = 'Sửa thương hiệu';
       document.getElementById('brandId').value = id;
       document.getElementById('brandName').value = name;
       document.getElementById('brandDescription').value = description;
-      document.getElementById('brandModal').classList.add('show');
+      document.getElementById('brandFormCard').style.display = 'block';
+      document.getElementById('brandsGrid').style.display = 'none';
+      document.getElementById('brandName').focus();
     }
     
-    function closeModal() {
-      document.getElementById('brandModal').classList.remove('show');
+    function hideForm() {
+      document.getElementById('brandFormCard').style.display = 'none';
+      document.getElementById('brandsGrid').style.display = '';
+      document.getElementById('brandForm').reset();
     }
-    
-    // Click outside to close
-    document.getElementById('brandModal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
     
     document.getElementById('brandForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -259,7 +261,7 @@ $totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE brand_id IS NOT
         const result = await response.json();
         
         if (result.success) {
-          closeModal();
+          hideForm();
           location.reload();
         } else {
           alert(result.message || 'Có lỗi xảy ra');

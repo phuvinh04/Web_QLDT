@@ -182,11 +182,39 @@ function getCategoryStyle($name) {
             <?php if ($canEdit): ?>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button class="btn btn-primary" onclick="openAddModal()">
+              <button class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm danh mục
               </button>
             </div>
             <?php endif; ?>
+          </div>
+        </div>
+
+        <!-- Form Thêm/Sửa -->
+        <div class="card" id="categoryFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm danh mục mới</h4>
+            <form id="categoryForm">
+              <input type="hidden" id="categoryId" name="id">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="categoryName" name="name" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mô tả</label>
+                  <textarea class="form-control" id="categoryDescription" name="description" rows="1"></textarea>
+                </div>
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -215,7 +243,7 @@ function getCategoryStyle($name) {
                     <i class="bi bi-eye"></i>
                   </a>
                   <?php if ($canEdit): ?>
-                  <button class="action-btn edit" onclick="openEditModal(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars(addslashes($category['name'])); ?>', '<?php echo htmlspecialchars(addslashes($category['description'] ?? '')); ?>')" title="Sửa">
+                  <button class="action-btn edit" onclick="showEditForm(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars(addslashes($category['name'])); ?>', '<?php echo htmlspecialchars(addslashes($category['description'] ?? '')); ?>')" title="Sửa">
                     <i class="bi bi-pencil"></i>
                   </button>
                   <button class="action-btn delete" onclick="deleteCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars(addslashes($category['name'])); ?>')" title="Xóa">
@@ -242,33 +270,6 @@ function getCategoryStyle($name) {
     </div>
   </div>
 
-  <!-- Modal Thêm/Sửa danh mục -->
-  <div class="custom-modal-overlay" id="categoryModal">
-    <div class="custom-modal-box">
-      <div class="custom-modal-header">
-        <h5 id="modalTitle">Thêm danh mục</h5>
-        <button type="button" class="custom-modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <form id="categoryForm">
-        <div class="custom-modal-body">
-          <input type="hidden" id="categoryId" name="id">
-          <div class="mb-3">
-            <label class="form-label">Tên danh mục <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="categoryName" name="name" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Mô tả</label>
-            <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary" id="saveBtn">Lưu</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <?php include '../components/scripts.php'; ?>
   <script>
     function changeSort() {
@@ -276,30 +277,31 @@ function getCategoryStyle($name) {
       window.location.href = 'categories.php?sort=' + sort;
     }
     
-    function openAddModal() {
-      document.getElementById('modalTitle').textContent = 'Thêm danh mục';
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm danh mục mới';
       document.getElementById('categoryId').value = '';
       document.getElementById('categoryName').value = '';
       document.getElementById('categoryDescription').value = '';
-      document.getElementById('categoryModal').classList.add('show');
+      document.getElementById('categoryFormCard').style.display = 'block';
+      document.querySelector('.row.g-4').style.display = 'none';
+      document.getElementById('categoryName').focus();
     }
     
-    function openEditModal(id, name, description) {
-      document.getElementById('modalTitle').textContent = 'Sửa danh mục';
+    function showEditForm(id, name, description) {
+      document.getElementById('formTitle').textContent = 'Sửa danh mục';
       document.getElementById('categoryId').value = id;
       document.getElementById('categoryName').value = name;
       document.getElementById('categoryDescription').value = description;
-      document.getElementById('categoryModal').classList.add('show');
+      document.getElementById('categoryFormCard').style.display = 'block';
+      document.querySelector('.row.g-4').style.display = 'none';
+      document.getElementById('categoryName').focus();
     }
     
-    function closeModal() {
-      document.getElementById('categoryModal').classList.remove('show');
+    function hideForm() {
+      document.getElementById('categoryFormCard').style.display = 'none';
+      document.querySelector('.row.g-4').style.display = '';
+      document.getElementById('categoryForm').reset();
     }
-    
-    // Click outside to close
-    document.getElementById('categoryModal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
     
     document.getElementById('categoryForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -322,7 +324,7 @@ function getCategoryStyle($name) {
         const result = await response.json();
         
         if (result.success) {
-          closeModal();
+          hideForm();
           location.reload();
         } else {
           alert(result.message || 'Có lỗi xảy ra');

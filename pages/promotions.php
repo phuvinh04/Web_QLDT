@@ -277,13 +277,88 @@ FROM promotions")->fetch_assoc();
             </div>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openAddModal()">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Tạo khuyến mãi
               </button>
             </div>
           </form>
         </div>
 
+        <!-- Form Thêm/Sửa Khuyến mãi -->
+        <div class="card" id="promotionFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Tạo khuyến mãi mới</h4>
+            <form method="POST">
+              <input type="hidden" name="action" id="formAction" value="add">
+              <input type="hidden" name="id" id="promotionId">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label">Tên khuyến mãi <span class="text-danger">*</span></label>
+                  <input type="text" name="name" id="promotionName" class="form-control" required>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Mô tả</label>
+                  <textarea name="description" id="promotionDescription" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Loại giảm giá</label>
+                  <select name="discount_type" id="discountType" class="form-control">
+                    <option value="percent">Giảm theo %</option>
+                    <option value="fixed">Giảm cố định (VNĐ)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
+                  <input type="number" name="discount_value" id="discountValue" class="form-control" step="0.01" min="0" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Áp dụng cho sản phẩm</label>
+                  <select name="product_id" id="productId" class="form-control">
+                    <option value="">Tất cả sản phẩm</option>
+                    <?php 
+                    $products->data_seek(0);
+                    while ($product = $products->fetch_assoc()): ?>
+                    <option value="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></option>
+                    <?php endwhile; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Đơn hàng tối thiểu</label>
+                  <input type="number" name="min_amount" id="minAmount" class="form-control" value="0" min="0">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Ngày bắt đầu</label>
+                  <input type="date" name="start_date" id="startDate" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Ngày kết thúc</label>
+                  <input type="date" name="end_date" id="endDate" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Độ ưu tiên</label>
+                  <input type="number" name="priority" id="priority" class="form-control" value="0" min="0">
+                  <small class="text-muted">Số cao hơn = ưu tiên cao hơn</small>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                  <div class="form-check">
+                    <input type="checkbox" name="active" class="form-check-input" id="activeCheck" checked>
+                    <label class="form-check-label" for="activeCheck">Kích hoạt</label>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div id="promotionListContainer">
         <!-- Promotions Grid -->
         <div class="row g-4">
           <?php if ($promotions->num_rows > 0): ?>
@@ -396,155 +471,8 @@ FROM promotions")->fetch_assoc();
             </div>
           <?php endif; ?>
         </div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Add Promotion Modal -->
-  <div id="addPromotionModal" class="custom-modal-overlay">
-    <div class="custom-modal-box modal-lg">
-      <form method="POST">
-        <input type="hidden" name="action" value="add">
-        <div class="custom-modal-header">
-          <h5>Tạo khuyến mãi mới</h5>
-          <button type="button" class="custom-modal-close" onclick="closeAddModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Tên khuyến mãi <span class="text-danger">*</span></label>
-              <input type="text" name="name" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Mô tả</label>
-              <textarea name="description" class="form-control" rows="2"></textarea>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Loại giảm giá</label>
-              <select name="discount_type" class="form-control">
-                <option value="percent">Giảm theo %</option>
-                <option value="fixed">Giảm cố định (VNĐ)</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
-              <input type="number" name="discount_value" class="form-control" step="0.01" min="0" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Áp dụng cho sản phẩm</label>
-              <select name="product_id" class="form-control">
-                <option value="">Tất cả sản phẩm</option>
-                <?php 
-                $products->data_seek(0);
-                while ($product = $products->fetch_assoc()): ?>
-                <option value="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></option>
-                <?php endwhile; ?>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Đơn hàng tối thiểu</label>
-              <input type="number" name="min_amount" class="form-control" value="0" min="0">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày bắt đầu</label>
-              <input type="date" name="start_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày kết thúc</label>
-              <input type="date" name="end_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Độ ưu tiên</label>
-              <input type="number" name="priority" class="form-control" value="0" min="0">
-              <small class="text-muted">Số cao hơn = ưu tiên cao hơn</small>
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-              <div class="form-check">
-                <input type="checkbox" name="active" class="form-check-input" id="add_active" checked>
-                <label class="form-check-label" for="add_active">Kích hoạt ngay</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary">Tạo khuyến mãi</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Edit Promotion Modal -->
-  <div id="editPromotionModal" class="custom-modal-overlay">
-    <div class="custom-modal-box modal-lg">
-      <form method="POST">
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="id" id="edit_id">
-        <div class="custom-modal-header">
-          <h5>Sửa khuyến mãi</h5>
-          <button type="button" class="custom-modal-close" onclick="closeEditModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Tên khuyến mãi <span class="text-danger">*</span></label>
-              <input type="text" name="name" id="edit_name" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Mô tả</label>
-              <textarea name="description" id="edit_description" class="form-control" rows="2"></textarea>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Loại giảm giá</label>
-              <select name="discount_type" id="edit_discount_type" class="form-control">
-                <option value="percent">Giảm theo %</option>
-                <option value="fixed">Giảm cố định (VNĐ)</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
-              <input type="number" name="discount_value" id="edit_discount_value" class="form-control" step="0.01" min="0" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Áp dụng cho sản phẩm</label>
-              <select name="product_id" id="edit_product_id" class="form-control">
-                <option value="">Tất cả sản phẩm</option>
-                <?php 
-                $products->data_seek(0);
-                while ($product = $products->fetch_assoc()): ?>
-                <option value="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></option>
-                <?php endwhile; ?>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Đơn hàng tối thiểu</label>
-              <input type="number" name="min_amount" id="edit_min_amount" class="form-control" min="0">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày bắt đầu</label>
-              <input type="date" name="start_date" id="edit_start_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Ngày kết thúc</label>
-              <input type="date" name="end_date" id="edit_end_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Độ ưu tiên</label>
-              <input type="number" name="priority" id="edit_priority" class="form-control" min="0">
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-              <div class="form-check">
-                <input type="checkbox" name="active" class="form-check-input" id="edit_active">
-                <label class="form-check-label" for="edit_active">Kích hoạt</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -557,32 +485,47 @@ FROM promotions")->fetch_assoc();
   <?php include '../components/scripts.php'; ?>
   
   <script>
-    function openAddModal() {
-      document.getElementById('addPromotionModal').classList.add('show');
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Tạo khuyến mãi mới';
+      document.getElementById('formAction').value = 'add';
+      document.getElementById('promotionId').value = '';
+      document.getElementById('promotionName').value = '';
+      document.getElementById('promotionDescription').value = '';
+      document.getElementById('discountType').value = 'percent';
+      document.getElementById('discountValue').value = '';
+      document.getElementById('productId').value = '';
+      document.getElementById('minAmount').value = '0';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      document.getElementById('priority').value = '0';
+      document.getElementById('activeCheck').checked = true;
+      document.getElementById('promotionFormCard').style.display = 'block';
+      document.getElementById('promotionListContainer').style.display = 'none';
+      document.getElementById('promotionName').focus();
     }
     
-    function closeAddModal() {
-      document.getElementById('addPromotionModal').classList.remove('show');
-    }
-    
-    function closeEditModal() {
-      document.getElementById('editPromotionModal').classList.remove('show');
+    function hideForm() {
+      document.getElementById('promotionFormCard').style.display = 'none';
+      document.getElementById('promotionListContainer').style.display = '';
     }
     
     function editPromotion(promo) {
-      document.getElementById('edit_id').value = promo.id;
-      document.getElementById('edit_name').value = promo.name || '';
-      document.getElementById('edit_description').value = promo.description || '';
-      document.getElementById('edit_discount_type').value = promo.discount_type || 'percent';
-      document.getElementById('edit_discount_value').value = promo.discount_value || 0;
-      document.getElementById('edit_product_id').value = promo.product_id || '';
-      document.getElementById('edit_min_amount').value = promo.min_amount || 0;
-      document.getElementById('edit_start_date').value = promo.start_date || '';
-      document.getElementById('edit_end_date').value = promo.end_date || '';
-      document.getElementById('edit_priority').value = promo.priority || 0;
-      document.getElementById('edit_active').checked = promo.active == 1;
-      
-      document.getElementById('editPromotionModal').classList.add('show');
+      document.getElementById('formTitle').textContent = 'Sửa khuyến mãi';
+      document.getElementById('formAction').value = 'edit';
+      document.getElementById('promotionId').value = promo.id;
+      document.getElementById('promotionName').value = promo.name || '';
+      document.getElementById('promotionDescription').value = promo.description || '';
+      document.getElementById('discountType').value = promo.discount_type || 'percent';
+      document.getElementById('discountValue').value = promo.discount_value || 0;
+      document.getElementById('productId').value = promo.product_id || '';
+      document.getElementById('minAmount').value = promo.min_amount || 0;
+      document.getElementById('startDate').value = promo.start_date || '';
+      document.getElementById('endDate').value = promo.end_date || '';
+      document.getElementById('priority').value = promo.priority || 0;
+      document.getElementById('activeCheck').checked = promo.active == 1;
+      document.getElementById('promotionFormCard').style.display = 'block';
+      document.getElementById('promotionListContainer').style.display = 'none';
+      document.getElementById('promotionName').focus();
     }
     
     function deletePromotion(id, name) {
@@ -591,14 +534,6 @@ FROM promotions")->fetch_assoc();
         document.getElementById('deleteForm').submit();
       }
     }
-    
-    // Close modal when clicking outside
-    document.getElementById('addPromotionModal').addEventListener('click', function(e) {
-      if (e.target === this) closeAddModal();
-    });
-    document.getElementById('editPromotionModal').addEventListener('click', function(e) {
-      if (e.target === this) closeEditModal();
-    });
   </script>
 </body>
 </html>

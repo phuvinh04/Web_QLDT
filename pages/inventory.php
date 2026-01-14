@@ -253,7 +253,7 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
                     <div class="small fw-bold text-truncate" style="max-width: 120px;"><?php echo htmlspecialchars($lowProduct['name']); ?></div>
                     <small class="text-danger">Còn <?php echo $lowProduct['quantity']; ?> SP</small>
                   </div>
-                  <button class="btn btn-sm btn-success" onclick="openStockInModal(<?php echo $lowProduct['id']; ?>)">
+                  <button class="btn btn-sm btn-success" onclick="showStockInForm(<?php echo $lowProduct['id']; ?>)">
                     <i class="bi bi-plus"></i>
                   </button>
                 </div>
@@ -266,14 +266,114 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
 
         <!-- Action Buttons -->
         <div class="mb-4">
-          <button class="btn btn-success me-2" onclick="openStockInModal()">
+          <button class="btn btn-success me-2" onclick="showStockInForm()">
             <i class="bi bi-arrow-down-circle"></i> Nhập kho
           </button>
-          <button class="btn btn-warning" onclick="openStockOutModal()">
+          <button class="btn btn-warning" onclick="showStockOutForm()">
             <i class="bi bi-arrow-up-circle"></i> Xuất kho
           </button>
         </div>
 
+        <!-- Form Nhập kho -->
+        <div class="card" id="stockInFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
+            <h4 style="margin-bottom: 20px; color: #059669;"><i class="bi bi-arrow-down-circle"></i> Nhập kho</h4>
+            <form method="POST">
+              <input type="hidden" name="action" value="stock_in">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Sản phẩm <span class="text-danger">*</span></label>
+                  <select name="product_id" id="stockin_product_id" class="form-control" required>
+                    <option value="">-- Chọn sản phẩm --</option>
+                    <?php 
+                    $productsResult->data_seek(0);
+                    while ($p = $productsResult->fetch_assoc()): ?>
+                    <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
+                    <?php endwhile; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số lượng nhập <span class="text-danger">*</span></label>
+                  <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Nhà cung cấp</label>
+                  <select name="supplier_id" class="form-control">
+                    <option value="">-- Chọn nhà cung cấp --</option>
+                    <?php 
+                    if ($suppliers) { $suppliers->data_seek(0); }
+                    while ($suppliers && $s = $suppliers->fetch_assoc()): ?>
+                    <option value="<?php echo $s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?></option>
+                    <?php endwhile; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mã tham chiếu (Hóa đơn/PO)</label>
+                  <input type="text" name="reference_number" class="form-control" placeholder="VD: HD001, PO-2024-001">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Ghi chú</label>
+                  <textarea name="notes" class="form-control" rows="2"></textarea>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-check-lg"></i> Nhập kho
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideStockInForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Form Xuất kho -->
+        <div class="card" id="stockOutFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+            <h4 style="margin-bottom: 20px; color: #d97706;"><i class="bi bi-arrow-up-circle"></i> Xuất kho</h4>
+            <form method="POST">
+              <input type="hidden" name="action" value="stock_out">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Sản phẩm <span class="text-danger">*</span></label>
+                  <select name="product_id" class="form-control" required>
+                    <option value="">-- Chọn sản phẩm --</option>
+                    <?php 
+                    $productsResult->data_seek(0);
+                    while ($p = $productsResult->fetch_assoc()): ?>
+                    <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
+                    <?php endwhile; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số lượng xuất <span class="text-danger">*</span></label>
+                  <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mã tham chiếu (Đơn hàng)</label>
+                  <input type="text" name="reference_number" class="form-control" placeholder="VD: DH001, ORDER-2024-001">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Ghi chú</label>
+                  <textarea name="notes" class="form-control" rows="2"></textarea>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-warning">
+                  <i class="bi bi-check-lg"></i> Xuất kho
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideStockOutForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div id="inventoryListContainer">
+
+        <div id="inventoryListContainer">
         <!-- Filter -->
         <div class="filter-bar">
           <form method="GET" class="filter-row">
@@ -407,134 +507,39 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
           </div>
           <?php endwhile; ?>
         </div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Stock In Modal -->
-  <div id="stockInModal" class="custom-modal-overlay">
-    <div class="custom-modal-box">
-      <form method="POST">
-        <input type="hidden" name="action" value="stock_in">
-        <div class="custom-modal-header" style="background: #059669; color: white;">
-          <h5><i class="bi bi-arrow-down-circle"></i> Nhập kho</h5>
-          <button type="button" class="custom-modal-close" style="color: white;" onclick="closeStockInModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="mb-3">
-            <label class="form-label">Sản phẩm <span class="text-danger">*</span></label>
-            <select name="product_id" id="stockin_product_id" class="form-control" required>
-              <option value="">-- Chọn sản phẩm --</option>
-              <?php 
-              $productsResult->data_seek(0);
-              while ($p = $productsResult->fetch_assoc()): ?>
-              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
-              <?php endwhile; ?>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Số lượng nhập <span class="text-danger">*</span></label>
-            <input type="number" name="quantity" class="form-control" min="1" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Nhà cung cấp</label>
-            <select name="supplier_id" class="form-control">
-              <option value="">-- Chọn nhà cung cấp --</option>
-              <?php 
-              if ($suppliers) { $suppliers->data_seek(0); }
-              while ($suppliers && $s = $suppliers->fetch_assoc()): ?>
-              <option value="<?php echo $s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?></option>
-              <?php endwhile; ?>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Mã tham chiếu (Hóa đơn/PO)</label>
-            <input type="text" name="reference_number" class="form-control" placeholder="VD: HD001, PO-2024-001">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Ghi chú</label>
-            <textarea name="notes" class="form-control" rows="2"></textarea>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeStockInModal()">Hủy</button>
-          <button type="submit" class="btn btn-success">Nhập kho</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Stock Out Modal -->
-  <div id="stockOutModal" class="custom-modal-overlay">
-    <div class="custom-modal-box">
-      <form method="POST">
-        <input type="hidden" name="action" value="stock_out">
-        <div class="custom-modal-header" style="background: #d97706; color: white;">
-          <h5><i class="bi bi-arrow-up-circle"></i> Xuất kho</h5>
-          <button type="button" class="custom-modal-close" style="color: white;" onclick="closeStockOutModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="mb-3">
-            <label class="form-label">Sản phẩm <span class="text-danger">*</span></label>
-            <select name="product_id" class="form-control" required>
-              <option value="">-- Chọn sản phẩm --</option>
-              <?php 
-              $productsResult->data_seek(0);
-              while ($p = $productsResult->fetch_assoc()): ?>
-              <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (Tồn: <?php echo $p['quantity']; ?>)</option>
-              <?php endwhile; ?>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Số lượng xuất <span class="text-danger">*</span></label>
-            <input type="number" name="quantity" class="form-control" min="1" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Mã tham chiếu (Đơn hàng)</label>
-            <input type="text" name="reference_number" class="form-control" placeholder="VD: DH001, ORDER-2024-001">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Ghi chú</label>
-            <textarea name="notes" class="form-control" rows="2"></textarea>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeStockOutModal()">Hủy</button>
-          <button type="submit" class="btn btn-warning">Xuất kho</button>
-        </div>
-      </form>
     </div>
   </div>
 
   <?php include '../components/scripts.php'; ?>
   
   <script>
-    function openStockInModal(productId) {
+    function showStockInForm(productId) {
       if (productId) {
         document.getElementById('stockin_product_id').value = productId;
       }
-      document.getElementById('stockInModal').classList.add('show');
+      document.getElementById('stockInFormCard').style.display = 'block';
+      document.getElementById('stockOutFormCard').style.display = 'none';
+      document.getElementById('inventoryListContainer').style.display = 'none';
+      document.getElementById('stockin_product_id').focus();
     }
     
-    function closeStockInModal() {
-      document.getElementById('stockInModal').classList.remove('show');
+    function hideStockInForm() {
+      document.getElementById('stockInFormCard').style.display = 'none';
+      document.getElementById('inventoryListContainer').style.display = '';
     }
     
-    function openStockOutModal() {
-      document.getElementById('stockOutModal').classList.add('show');
+    function showStockOutForm() {
+      document.getElementById('stockOutFormCard').style.display = 'block';
+      document.getElementById('stockInFormCard').style.display = 'none';
+      document.getElementById('inventoryListContainer').style.display = 'none';
     }
     
-    function closeStockOutModal() {
-      document.getElementById('stockOutModal').classList.remove('show');
+    function hideStockOutForm() {
+      document.getElementById('stockOutFormCard').style.display = 'none';
+      document.getElementById('inventoryListContainer').style.display = '';
     }
-    
-    // Close modal when clicking outside
-    document.getElementById('stockInModal').addEventListener('click', function(e) {
-      if (e.target === this) closeStockInModal();
-    });
-    document.getElementById('stockOutModal').addEventListener('click', function(e) {
-      if (e.target === this) closeStockOutModal();
-    });
   </script>
 </body>
 </html>

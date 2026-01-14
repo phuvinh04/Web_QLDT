@@ -401,7 +401,7 @@ $paymentLabels = [
             <?php if ($canEdit): ?>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openAddModal()">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Tạo đơn hàng
               </button>
             </div>
@@ -409,10 +409,78 @@ $paymentLabels = [
           </form>
         </div>
 
-        <div style="margin-bottom: 16px; color: var(--text-muted);">
+        <!-- Form Tạo/Sửa Đơn hàng -->
+        <div class="card" id="orderFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="modalTitle" style="margin-bottom: 20px;"><i class="bi bi-cart-plus me-2"></i>Tạo đơn hàng mới</h4>
+            <form id="orderForm">
+              <input type="hidden" id="orderId" name="id">
+              
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Khách hàng</label>
+                  <select id="orderCustomer" name="customer_id" class="form-control">
+                    <option value="">-- Khách lẻ --</option>
+                    <?php foreach ($customers as $cus): ?>
+                    <option value="<?php echo $cus['id']; ?>"><?php echo htmlspecialchars($cus['name'] . ' - ' . $cus['phone']); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Phương thức thanh toán</label>
+                  <select id="orderPayment" name="payment_method" class="form-control">
+                    <option value="cash">Tiền mặt</option>
+                    <option value="transfer">Chuyển khoản</option>
+                    <option value="cod">COD (Ship COD)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <label class="form-label">Sản phẩm <span style="color:red">*</span></label>
+                <div id="orderItemsContainer"></div>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addProductRow()">
+                  <i class="bi bi-plus"></i> Thêm sản phẩm
+                </button>
+              </div>
+
+              <div class="order-summary">
+                <div class="order-summary-row">
+                  <span>Tạm tính:</span>
+                  <span id="subtotalDisplay">0₫</span>
+                </div>
+                <div class="order-summary-row">
+                  <span>Giảm giá:</span>
+                  <input type="number" id="orderDiscount" name="discount" class="form-control" style="width: 150px; text-align: right;" value="0" min="0" onchange="calculateTotal()">
+                </div>
+                <div class="order-summary-row total">
+                  <span>Tổng cộng:</span>
+                  <span id="totalDisplay">0₫</span>
+                </div>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <label class="form-label">Ghi chú</label>
+                <textarea id="orderNotes" name="notes" class="form-control" rows="2" placeholder="Ghi chú cho đơn hàng..."></textarea>
+              </div>
+
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" class="btn btn-primary" onclick="saveOrder()">
+                  <i class="bi bi-check-lg"></i> Lưu đơn hàng
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px; color: var(--text-muted);" id="orderCount">
           Hiển thị <?php echo count($orders); ?> / <?php echo $totalOrders; ?> đơn hàng
         </div>
 
+        <div id="orderListContainer">
         <!-- Orders Table -->
         <?php if (empty($orders)): ?>
         <div class="empty-state">
@@ -506,10 +574,11 @@ $paymentLabels = [
           </div>
         </div>
         <?php endif; ?>
+        </div>
 
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-        <div class="pagination">
+        <div class="pagination" id="paginationContainer">
           <?php $queryBase = buildQueryString($filterParams); $queryBase = $queryBase ? '&' . $queryBase : ''; ?>
           <?php if ($currentPage > 1): ?>
           <a href="?page=<?php echo $currentPage - 1; ?><?php echo $queryBase; ?>"><button><i class="bi bi-chevron-left"></i></button></a>
@@ -525,77 +594,6 @@ $paymentLabels = [
       </div>
 
       <?php include '../components/footer.php'; ?>
-    </div>
-  </div>
-
-  <!-- Modal Tạo/Sửa Đơn hàng -->
-  <div class="modal-overlay" id="orderModal">
-    <div class="modal" style="max-width: 750px;">
-      <div class="modal-header">
-        <h3 id="modalTitle"><i class="bi bi-cart-plus me-2"></i>Tạo đơn hàng mới</h3>
-        <button class="action-btn" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="orderForm">
-          <input type="hidden" id="orderId" name="id">
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>Khách hàng</label>
-              <select id="orderCustomer" name="customer_id" class="form-control">
-                <option value="">-- Khách lẻ --</option>
-                <?php foreach ($customers as $cus): ?>
-                <option value="<?php echo $cus['id']; ?>"><?php echo htmlspecialchars($cus['name'] . ' - ' . $cus['phone']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Phương thức thanh toán</label>
-              <select id="orderPayment" name="payment_method" class="form-control">
-                <option value="cash">Tiền mặt</option>
-                <option value="transfer">Chuyển khoản</option>
-                <option value="cod">COD (Ship COD)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Sản phẩm <span style="color:red">*</span></label>
-            <div id="orderItemsContainer">
-              <!-- Product rows will be added here -->
-            </div>
-            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addProductRow()">
-              <i class="bi bi-plus"></i> Thêm sản phẩm
-            </button>
-          </div>
-
-          <div class="order-summary">
-            <div class="order-summary-row">
-              <span>Tạm tính:</span>
-              <span id="subtotalDisplay">0₫</span>
-            </div>
-            <div class="order-summary-row">
-              <span>Giảm giá:</span>
-              <input type="number" id="orderDiscount" name="discount" class="form-control" style="width: 150px; text-align: right;" value="0" min="0" onchange="calculateTotal()">
-            </div>
-            <div class="order-summary-row total">
-              <span>Tổng cộng:</span>
-              <span id="totalDisplay">0₫</span>
-            </div>
-          </div>
-
-          <div class="form-group mt-3">
-            <label>Ghi chú</label>
-            <textarea id="orderNotes" name="notes" class="form-control" rows="2" placeholder="Ghi chú cho đơn hàng..."></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" onclick="saveOrder()">
-          <i class="bi bi-check-lg"></i> Lưu đơn hàng
-        </button>
-      </div>
     </div>
   </div>
 
@@ -637,18 +635,27 @@ $paymentLabels = [
     }
 
     // Modal functions
-    function openAddModal() {
-      document.getElementById('modalTitle').textContent = 'Tạo đơn hàng mới';
+    function showAddForm() {
+      document.getElementById('modalTitle').innerHTML = '<i class="bi bi-cart-plus me-2"></i>Tạo đơn hàng mới';
       document.getElementById('orderForm').reset();
       document.getElementById('orderId').value = '';
       document.getElementById('orderItemsContainer').innerHTML = '';
       addProductRow();
       calculateTotal();
-      document.getElementById('orderModal').classList.add('show');
+      document.getElementById('orderFormCard').style.display = 'block';
+      document.getElementById('orderListContainer').style.display = 'none';
+      document.getElementById('orderCount').style.display = 'none';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = 'none';
+      document.getElementById('orderCustomer').focus();
     }
 
-    function closeModal() {
-      document.getElementById('orderModal').classList.remove('show');
+    function hideForm() {
+      document.getElementById('orderFormCard').style.display = 'none';
+      document.getElementById('orderListContainer').style.display = '';
+      document.getElementById('orderCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
     }
 
     function closeViewModal() {
@@ -770,7 +777,7 @@ $paymentLabels = [
         
         if (result.success) {
           showAlert('success', result.message);
-          closeModal();
+          hideForm();
           setTimeout(() => location.reload(), 1000);
         } else {
           showAlert('danger', result.message || 'Có lỗi xảy ra');
@@ -912,7 +919,12 @@ $paymentLabels = [
           });
           
           calculateTotal();
-          document.getElementById('orderModal').classList.add('show');
+          document.getElementById('orderFormCard').style.display = 'block';
+          document.getElementById('orderListContainer').style.display = 'none';
+          document.getElementById('orderCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
+          document.getElementById('orderCustomer').focus();
         }
       } catch (error) {
         showAlert('danger', 'Không thể tải thông tin đơn hàng');

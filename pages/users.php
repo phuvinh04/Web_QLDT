@@ -148,6 +148,9 @@ $where = "WHERE 1=1";
 $params = [];
 $types = "";
 
+// Ẩn khách hàng (role_id = 5)
+$where .= " AND u.role_id != 5";
+
 if ($filter_role) {
     $where .= " AND r.name = ?";
     $params[] = $filter_role;
@@ -320,15 +323,75 @@ $base_url = "../";
             </div>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openModal('add')">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm người dùng
               </button>
             </div>
           </form>
         </div>
 
+        <!-- Form Thêm/Sửa Người dùng -->
+        <div class="card" id="userFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm người dùng mới</h4>
+            <div id="formAlertBox"></div>
+            <form id="userForm">
+              <input type="hidden" name="action" id="formAction" value="create">
+              <input type="hidden" name="id" id="userId">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Vai trò <span style="color:red">*</span></label>
+                  <select name="role_id" id="roleId" class="form-control" required>
+                    <?php $roles->data_seek(0); while ($role = $roles->fetch_assoc()): ?>
+                    <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?> - <?= $role['description'] ?></option>
+                    <?php endwhile; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Tên đăng nhập <span style="color:red">*</span></label>
+                  <input type="text" name="username" id="username" class="form-control" required minlength="3">
+                  <small id="usernameError" class="field-error" style="color:#dc2626;display:none;margin-top:4px;"></small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mật khẩu <span id="pwdRequired" style="color:red">*</span></label>
+                  <input type="password" name="password" id="password" class="form-control" minlength="6">
+                  <small id="pwdHint" style="color:#666;display:none;">Để trống nếu không muốn đổi mật khẩu</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Họ tên <span style="color:red">*</span></label>
+                  <input type="text" name="full_name" id="fullName" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email <span style="color:red">*</span></label>
+                  <input type="email" name="email" id="email" class="form-control" required>
+                  <small id="emailError" class="field-error" style="color:#dc2626;display:none;margin-top:4px;"></small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số điện thoại</label>
+                  <input type="text" name="phone" id="phone" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Trạng thái</label>
+                  <select name="status" id="status" class="form-control">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <!-- Users Table -->
-        <div class="card">
+        <div class="card" id="userTableCard">
           <div class="card-body">
             <div class="table-responsive">
               <table>
@@ -376,7 +439,7 @@ $base_url = "../";
         </div>
 
         <?php if ($total_pages > 1): ?>
-        <div class="pagination">
+        <div class="pagination" id="paginationContainer">
           <?php if ($page > 1): ?>
           <a href="?page=<?= $page-1 ?>&role=<?= $filter_role ?>&status=<?= $filter_status ?>&search=<?= urlencode($search) ?>"><button><i class="bi bi-chevron-left"></i></button></a>
           <?php endif; ?>
@@ -398,72 +461,6 @@ $base_url = "../";
     </div>
   </div>
 
-  <!-- Add/Edit Modal -->
-  <div id="userModal" class="user-modal-overlay">
-    <div class="user-modal-box">
-      <div class="user-modal-header">
-        <h5 id="modalTitle">Thêm người dùng</h5>
-        <button class="user-modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <form id="userForm">
-        <div class="user-modal-body">
-          <div id="modalAlertBox"></div>
-          <input type="hidden" name="action" id="formAction" value="create">
-          <input type="hidden" name="id" id="userId">
-          
-          <div class="form-group">
-            <label>Vai trò <span style="color:red">*</span></label>
-            <select name="role_id" id="roleId" required>
-              <?php $roles->data_seek(0); while ($role = $roles->fetch_assoc()): ?>
-              <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?> - <?= $role['description'] ?></option>
-              <?php endwhile; ?>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Tên đăng nhập <span style="color:red">*</span></label>
-            <input type="text" name="username" id="username" required minlength="3">
-            <small id="usernameError" class="field-error" style="color:#dc2626;display:none;margin-top:4px;"></small>
-          </div>
-          
-          <div class="form-group">
-            <label>Mật khẩu <span id="pwdRequired" style="color:red">*</span></label>
-            <input type="password" name="password" id="password" minlength="6">
-            <small id="pwdHint" style="color:#666;display:none;">Để trống nếu không muốn đổi mật khẩu</small>
-          </div>
-          
-          <div class="form-group">
-            <label>Họ tên <span style="color:red">*</span></label>
-            <input type="text" name="full_name" id="fullName" required>
-          </div>
-          
-          <div class="form-group">
-            <label>Email <span style="color:red">*</span></label>
-            <input type="email" name="email" id="email" required>
-            <small id="emailError" class="field-error" style="color:#dc2626;display:none;margin-top:4px;"></small>
-          </div>
-          
-          <div class="form-group">
-            <label>Số điện thoại</label>
-            <input type="text" name="phone" id="phone">
-          </div>
-          
-          <div class="form-group">
-            <label>Trạng thái</label>
-            <select name="status" id="status">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-        <div class="user-modal-footer">
-          <button type="button" class="btn-cancel" onclick="closeModal()">Hủy</button>
-          <button type="submit" class="btn-save">Lưu</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- View Modal -->
   <div id="viewModal" class="user-modal-overlay">
     <div class="user-modal-box">
@@ -480,20 +477,28 @@ $base_url = "../";
 
   <?php include '../components/scripts.php'; ?>
   <script>
-    function openModal(mode) {
-      document.getElementById('userModal').classList.add('show');
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm người dùng mới';
       document.getElementById('userForm').reset();
-      
-      if (mode === 'add') {
-        document.getElementById('modalTitle').textContent = 'Thêm người dùng';
-        document.getElementById('formAction').value = 'create';
-        document.getElementById('userId').value = '';
-        document.getElementById('password').required = true;
-        document.getElementById('pwdRequired').style.display = 'inline';
-        document.getElementById('pwdHint').style.display = 'none';
-        // Reset error states
-        resetFieldErrors();
-      }
+      document.getElementById('formAction').value = 'create';
+      document.getElementById('userId').value = '';
+      document.getElementById('password').required = true;
+      document.getElementById('pwdRequired').style.display = 'inline';
+      document.getElementById('pwdHint').style.display = 'none';
+      resetFieldErrors();
+      document.getElementById('userFormCard').style.display = 'block';
+      document.getElementById('userTableCard').style.display = 'none';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = 'none';
+      document.getElementById('username').focus();
+    }
+    
+    function hideForm() {
+      document.getElementById('userFormCard').style.display = 'none';
+      document.getElementById('userTableCard').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
+      resetFieldErrors();
     }
     
     function resetFieldErrors() {
@@ -501,11 +506,6 @@ $base_url = "../";
       document.getElementById('emailError').style.display = 'none';
       document.getElementById('username').style.borderColor = '#ddd';
       document.getElementById('email').style.borderColor = '#ddd';
-    }
-    
-    function closeModal() {
-      document.getElementById('userModal').classList.remove('show');
-      resetFieldErrors();
     }
     
     function closeViewModal() {
@@ -519,7 +519,7 @@ $base_url = "../";
     }
     
     function showModalAlert(message, type) {
-      const modalAlertBox = document.getElementById('modalAlertBox');
+      const modalAlertBox = document.getElementById('formAlertBox');
       modalAlertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
       setTimeout(() => modalAlertBox.innerHTML = '', 4000);
     }
@@ -532,7 +532,7 @@ $base_url = "../";
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById('modalTitle').textContent = 'Sửa người dùng';
+        document.getElementById('formTitle').textContent = 'Sửa người dùng';
         document.getElementById('formAction').value = 'update';
         document.getElementById('userId').value = data.id;
         document.getElementById('roleId').value = data.role_id;
@@ -545,7 +545,11 @@ $base_url = "../";
         document.getElementById('password').required = false;
         document.getElementById('pwdRequired').style.display = 'none';
         document.getElementById('pwdHint').style.display = 'block';
-        document.getElementById('userModal').classList.add('show');
+        document.getElementById('userFormCard').style.display = 'block';
+        document.getElementById('userTableCard').style.display = 'none';
+        const pagination = document.getElementById('paginationContainer');
+        if (pagination) pagination.style.display = 'none';
+        document.getElementById('username').focus();
       });
     }
     
@@ -601,7 +605,7 @@ $base_url = "../";
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          closeModal();
+          hideForm();
           showAlert(data.message, 'success');
           setTimeout(() => location.reload(), 1000);
         } else {

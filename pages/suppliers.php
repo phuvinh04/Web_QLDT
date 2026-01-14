@@ -244,13 +244,74 @@ FROM suppliers")->fetch_assoc();
             </div>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openAddModal()">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm NCC
               </button>
             </div>
           </form>
         </div>
 
+        <!-- Form Thêm/Sửa Nhà cung cấp -->
+        <div class="card" id="supplierFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm nhà cung cấp mới</h4>
+            <form method="POST">
+              <input type="hidden" name="action" id="formAction" value="add">
+              <input type="hidden" name="id" id="supplierId">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên nhà cung cấp <span class="text-danger">*</span></label>
+                  <input type="text" name="name" id="supplierName" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Người liên hệ</label>
+                  <input type="text" name="contact_person" id="contactPerson" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số điện thoại</label>
+                  <input type="tel" name="phone" id="supplierPhone" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" name="email" id="supplierEmail" class="form-control">
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label">Địa chỉ</label>
+                  <input type="text" name="address" id="supplierAddress" class="form-control">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Thành phố</label>
+                  <input type="text" name="city" id="supplierCity" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mã số thuế</label>
+                  <input type="text" name="tax_id" id="taxId" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Trạng thái</label>
+                  <select name="status" id="supplierStatus" class="form-control">
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Ghi chú</label>
+                  <textarea name="notes" id="supplierNotes" class="form-control" rows="2"></textarea>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div id="supplierListContainer">
         <!-- Suppliers Table -->
         <div class="data-table">
           <table class="table">
@@ -321,128 +382,8 @@ FROM suppliers")->fetch_assoc();
             </tbody>
           </table>
         </div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Add Supplier Modal -->
-  <div id="addSupplierModal" class="custom-modal-overlay">
-    <div class="custom-modal-box modal-lg">
-      <form method="POST">
-        <input type="hidden" name="action" value="add">
-        <div class="custom-modal-header">
-          <h5>Thêm nhà cung cấp mới</h5>
-          <button type="button" class="custom-modal-close" onclick="closeAddModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Tên nhà cung cấp <span class="text-danger">*</span></label>
-              <input type="text" name="name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Người liên hệ</label>
-              <input type="text" name="contact_person" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Số điện thoại</label>
-              <input type="tel" name="phone" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control">
-            </div>
-            <div class="col-md-8">
-              <label class="form-label">Địa chỉ</label>
-              <input type="text" name="address" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Thành phố</label>
-              <input type="text" name="city" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Mã số thuế</label>
-              <input type="text" name="tax_id" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Trạng thái</label>
-              <select name="status" class="form-control">
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Ngừng hoạt động</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Ghi chú</label>
-              <textarea name="notes" class="form-control" rows="2"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary">Thêm nhà cung cấp</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Edit Supplier Modal -->
-  <div id="editSupplierModal" class="custom-modal-overlay">
-    <div class="custom-modal-box modal-lg">
-      <form method="POST">
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="id" id="edit_id">
-        <div class="custom-modal-header">
-          <h5>Sửa nhà cung cấp</h5>
-          <button type="button" class="custom-modal-close" onclick="closeEditModal()">&times;</button>
-        </div>
-        <div class="custom-modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Tên nhà cung cấp <span class="text-danger">*</span></label>
-              <input type="text" name="name" id="edit_name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Người liên hệ</label>
-              <input type="text" name="contact_person" id="edit_contact_person" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Số điện thoại</label>
-              <input type="tel" name="phone" id="edit_phone" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" id="edit_email" class="form-control">
-            </div>
-            <div class="col-md-8">
-              <label class="form-label">Địa chỉ</label>
-              <input type="text" name="address" id="edit_address" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Thành phố</label>
-              <input type="text" name="city" id="edit_city" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Mã số thuế</label>
-              <input type="text" name="tax_id" id="edit_tax_id" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Trạng thái</label>
-              <select name="status" id="edit_status" class="form-control">
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Ngừng hoạt động</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Ghi chú</label>
-              <textarea name="notes" id="edit_notes" class="form-control" rows="2"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="custom-modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Hủy</button>
-          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -455,31 +396,45 @@ FROM suppliers")->fetch_assoc();
   <?php include '../components/scripts.php'; ?>
   
   <script>
-    function openAddModal() {
-      document.getElementById('addSupplierModal').classList.add('show');
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm nhà cung cấp mới';
+      document.getElementById('formAction').value = 'add';
+      document.getElementById('supplierId').value = '';
+      document.getElementById('supplierName').value = '';
+      document.getElementById('contactPerson').value = '';
+      document.getElementById('supplierPhone').value = '';
+      document.getElementById('supplierEmail').value = '';
+      document.getElementById('supplierAddress').value = '';
+      document.getElementById('supplierCity').value = '';
+      document.getElementById('taxId').value = '';
+      document.getElementById('supplierStatus').value = 'active';
+      document.getElementById('supplierNotes').value = '';
+      document.getElementById('supplierFormCard').style.display = 'block';
+      document.getElementById('supplierListContainer').style.display = 'none';
+      document.getElementById('supplierName').focus();
     }
     
-    function closeAddModal() {
-      document.getElementById('addSupplierModal').classList.remove('show');
-    }
-    
-    function closeEditModal() {
-      document.getElementById('editSupplierModal').classList.remove('show');
+    function hideForm() {
+      document.getElementById('supplierFormCard').style.display = 'none';
+      document.getElementById('supplierListContainer').style.display = '';
     }
     
     function editSupplier(supplier) {
-      document.getElementById('edit_id').value = supplier.id;
-      document.getElementById('edit_name').value = supplier.name || '';
-      document.getElementById('edit_contact_person').value = supplier.contact_person || '';
-      document.getElementById('edit_phone').value = supplier.phone || '';
-      document.getElementById('edit_email').value = supplier.email || '';
-      document.getElementById('edit_address').value = supplier.address || '';
-      document.getElementById('edit_city').value = supplier.city || '';
-      document.getElementById('edit_tax_id').value = supplier.tax_id || '';
-      document.getElementById('edit_status').value = supplier.status || 'active';
-      document.getElementById('edit_notes').value = supplier.notes || '';
-      
-      document.getElementById('editSupplierModal').classList.add('show');
+      document.getElementById('formTitle').textContent = 'Sửa nhà cung cấp';
+      document.getElementById('formAction').value = 'edit';
+      document.getElementById('supplierId').value = supplier.id;
+      document.getElementById('supplierName').value = supplier.name || '';
+      document.getElementById('contactPerson').value = supplier.contact_person || '';
+      document.getElementById('supplierPhone').value = supplier.phone || '';
+      document.getElementById('supplierEmail').value = supplier.email || '';
+      document.getElementById('supplierAddress').value = supplier.address || '';
+      document.getElementById('supplierCity').value = supplier.city || '';
+      document.getElementById('taxId').value = supplier.tax_id || '';
+      document.getElementById('supplierStatus').value = supplier.status || 'active';
+      document.getElementById('supplierNotes').value = supplier.notes || '';
+      document.getElementById('supplierFormCard').style.display = 'block';
+      document.getElementById('supplierListContainer').style.display = 'none';
+      document.getElementById('supplierName').focus();
     }
     
     function deleteSupplier(id, name) {
@@ -488,14 +443,6 @@ FROM suppliers")->fetch_assoc();
         document.getElementById('deleteForm').submit();
       }
     }
-    
-    // Close modal when clicking outside
-    document.getElementById('addSupplierModal').addEventListener('click', function(e) {
-      if (e.target === this) closeAddModal();
-    });
-    document.getElementById('editSupplierModal').addEventListener('click', function(e) {
-      if (e.target === this) closeEditModal();
-    });
   </script>
 </body>
 </html>

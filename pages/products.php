@@ -339,7 +339,7 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
             <?php if ($canEdit): ?>
             <div class="filter-group action">
               <label>&nbsp;</label>
-              <button type="button" class="btn btn-primary" onclick="openAddModal()">
+              <button type="button" class="btn btn-primary" onclick="showAddForm()">
                 <i class="bi bi-plus-circle"></i> Thêm sản phẩm
               </button>
             </div>
@@ -347,10 +347,90 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
           </form>
         </div>
 
-        <div style="margin-bottom: 16px; color: var(--text-muted);">
+        <!-- Form Thêm/Sửa Sản phẩm -->
+        <div class="card" id="productFormCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <h4 id="formTitle" style="margin-bottom: 20px;">Thêm sản phẩm mới</h4>
+            <form id="productForm">
+              <input type="hidden" id="productId" name="id">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                  <input type="text" id="productName" name="name" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mã SKU <span class="text-danger">*</span></label>
+                  <input type="text" id="productSku" name="sku" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Danh mục <span class="text-danger">*</span></label>
+                  <select id="productCategory" name="category_id" class="form-control" required>
+                    <option value="">-- Chọn danh mục --</option>
+                    <?php foreach ($categories as $cat): ?>
+                    <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Thương hiệu</label>
+                  <select id="productBrand" name="brand_id" class="form-control">
+                    <option value="">-- Chọn thương hiệu --</option>
+                    <?php foreach ($brands as $brand): ?>
+                    <option value="<?php echo $brand['id']; ?>"><?php echo htmlspecialchars($brand['name']); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Trạng thái</label>
+                  <select id="productStatus" name="status" class="form-control">
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giá bán <span class="text-danger">*</span></label>
+                  <input type="number" id="productPrice" name="price" class="form-control" min="0" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giá nhập</label>
+                  <input type="number" id="productCost" name="cost" class="form-control" min="0">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Số lượng tồn</label>
+                  <input type="number" id="productQuantity" name="quantity" class="form-control" min="0" value="0">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">SL tối thiểu</label>
+                  <input type="number" id="productMinQuantity" name="min_quantity" class="form-control" min="0" value="10">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Mô tả</label>
+                  <textarea id="productDescription" name="description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Hình ảnh</label>
+                  <input type="file" id="productImageFile" accept="image/*" class="form-control">
+                  <input type="hidden" id="productImage" name="image">
+                  <div class="image-preview" id="imagePreview"><i class="bi bi-image"></i></div>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" class="btn btn-primary" onclick="saveProduct()">
+                  <i class="bi bi-check-lg"></i> Lưu sản phẩm
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                  <i class="bi bi-x-lg"></i> Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px; color: var(--text-muted);" id="productCount">
           Hiển thị <?php echo count($products); ?> / <?php echo $totalProducts; ?> sản phẩm
         </div>
 
+        <div id="productListContainer">
         <?php if (empty($products)): ?>
         <div class="empty-state">
           <i class="bi bi-box-seam"></i>
@@ -399,9 +479,10 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        </div>
 
         <?php if ($totalPages > 1): ?>
-        <div class="pagination">
+        <div class="pagination" id="paginationContainer">
           <?php $queryBase = buildQueryString($filterParams); $queryBase = $queryBase ? '&' . $queryBase : ''; ?>
           <?php if ($currentPage > 1): ?>
           <a href="?page=<?php echo $currentPage - 1; ?><?php echo $queryBase; ?>"><button><i class="bi bi-chevron-left"></i></button></a>
@@ -416,86 +497,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
         <?php endif; ?>
       </div>
       <?php include '../components/footer.php'; ?>
-    </div>
-  </div>
-
-  <!-- Modal Thêm/Sửa - Luôn render để JS hoạt động -->
-  <div class="modal-overlay" id="productModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="modalTitle">Thêm sản phẩm mới</h3>
-        <button class="action-btn" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="productForm">
-          <input type="hidden" id="productId" name="id">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
-              <input type="text" id="productName" name="name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Mã SKU <span class="text-danger">*</span></label>
-              <input type="text" id="productSku" name="sku" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Danh mục <span class="text-danger">*</span></label>
-              <select id="productCategory" name="category_id" class="form-control" required>
-                <option value="">-- Chọn danh mục --</option>
-                <?php foreach ($categories as $cat): ?>
-                <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Thương hiệu</label>
-              <select id="productBrand" name="brand_id" class="form-control">
-                <option value="">-- Chọn thương hiệu --</option>
-                <?php foreach ($brands as $brand): ?>
-                <option value="<?php echo $brand['id']; ?>"><?php echo htmlspecialchars($brand['name']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Trạng thái</label>
-              <select id="productStatus" name="status" class="form-control">
-                <option value="active">Đang bán</option>
-                <option value="inactive">Ngừng bán</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Giá bán <span class="text-danger">*</span></label>
-              <input type="number" id="productPrice" name="price" class="form-control" min="0" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Giá nhập</label>
-              <input type="number" id="productCost" name="cost" class="form-control" min="0">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Số lượng tồn</label>
-              <input type="number" id="productQuantity" name="quantity" class="form-control" min="0" value="0">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Số lượng tối thiểu</label>
-              <input type="number" id="productMinQuantity" name="min_quantity" class="form-control" min="0" value="10">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Mô tả</label>
-              <textarea id="productDescription" name="description" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Hình ảnh</label>
-              <input type="file" id="productImageFile" accept="image/*" class="form-control">
-              <input type="hidden" id="productImage" name="image">
-              <div class="image-preview" id="imagePreview"><i class="bi bi-image"></i></div>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-        <button type="button" class="btn btn-primary" onclick="saveProduct()"><i class="bi bi-check-lg"></i> Lưu sản phẩm</button>
-      </div>
     </div>
   </div>
 
@@ -551,28 +552,26 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
       setTimeout(() => alert.remove(), 5000);
     }
 
-    function openAddModal() {
-      console.log('openAddModal called'); // Debug
-      const modal = document.getElementById('productModal');
-      console.log('modal:', modal); // Debug
-      if (!modal) { 
-        alert('Modal không tìm thấy!'); 
-        return; 
-      }
-      const title = document.getElementById('modalTitle');
-      const form = document.getElementById('productForm');
-      if (title) title.textContent = 'Thêm sản phẩm mới';
-      if (form) form.reset();
-      const productId = document.getElementById('productId');
-      if (productId) productId.value = '';
-      const preview = document.getElementById('imagePreview');
-      if (preview) preview.innerHTML = '<i class="bi bi-image"></i>';
-      modal.classList.add('show');
-      console.log('Modal should be visible now'); // Debug
+    function showAddForm() {
+      document.getElementById('formTitle').textContent = 'Thêm sản phẩm mới';
+      document.getElementById('productForm').reset();
+      document.getElementById('productId').value = '';
+      document.getElementById('imagePreview').innerHTML = '<i class="bi bi-image"></i>';
+      document.getElementById('productFormCard').style.display = 'block';
+      document.getElementById('productListContainer').style.display = 'none';
+      document.getElementById('productCount').style.display = 'none';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = 'none';
+      document.getElementById('productName').focus();
     }
 
-    function closeModal() {
-      document.getElementById('productModal')?.classList.remove('show');
+    function hideForm() {
+      document.getElementById('productFormCard').style.display = 'none';
+      document.getElementById('productListContainer').style.display = '';
+      document.getElementById('productCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
+      document.getElementById('productForm').reset();
     }
 
     function closeViewModal() {
@@ -616,7 +615,7 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
         const result = await response.json();
         if (result.success) {
           const p = result.data;
-          document.getElementById('modalTitle').textContent = 'Sửa sản phẩm';
+          document.getElementById('formTitle').textContent = 'Sửa sản phẩm';
           document.getElementById('productId').value = p.id;
           document.getElementById('productName').value = p.name;
           document.getElementById('productSku').value = p.sku;
@@ -630,7 +629,12 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
           document.getElementById('productDescription').value = p.description || '';
           document.getElementById('productImage').value = p.image || '';
           document.getElementById('imagePreview').innerHTML = p.image ? `<img src="../assets/images/products/${p.image}">` : '<i class="bi bi-image"></i>';
-          document.getElementById('productModal').classList.add('show');
+          document.getElementById('productFormCard').style.display = 'block';
+          document.getElementById('productListContainer').style.display = 'none';
+          document.getElementById('productCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
+          document.getElementById('productName').focus();
         } else {
           showAlert(result.message, 'danger');
         }
@@ -671,7 +675,7 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
         const result = await response.json();
         if (result.success) {
           showAlert(result.message, 'success');
-          closeModal();
+          hideForm();
           setTimeout(() => location.reload(), 1000);
         } else {
           showAlert(result.message, 'danger');
