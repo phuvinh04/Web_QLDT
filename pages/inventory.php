@@ -141,12 +141,12 @@ $statsQuery = $conn->query("SELECT
     (SELECT COALESCE(SUM(quantity), 0) FROM products) as total_stock,
     (SELECT COALESCE(SUM(quantity), 0) FROM stock_movements WHERE type = 'in' AND DATE(created_at) = '$today') as today_in,
     (SELECT COALESCE(SUM(quantity), 0) FROM stock_movements WHERE type = 'out' AND DATE(created_at) = '$today') as today_out,
-    (SELECT COUNT(*) FROM products WHERE quantity <= 10) as low_stock
+    (SELECT COUNT(*) FROM products WHERE quantity <= min_quantity) as low_stock
 ");
 $stats = $statsQuery ? $statsQuery->fetch_assoc() : ['total_stock' => 0, 'today_in' => 0, 'today_out' => 0, 'low_stock' => 0];
 
 // Get low stock products
-$lowStockProducts = $conn->query("SELECT id, name, quantity, image FROM products WHERE quantity <= 10 ORDER BY quantity ASC LIMIT 10");
+$lowStockProducts = $conn->query("SELECT id, name, quantity, min_quantity, image FROM products WHERE quantity <= min_quantity ORDER BY quantity ASC LIMIT 10");
 $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
 ?>
 <!DOCTYPE html>
@@ -489,7 +489,15 @@ $hasLowStock = $lowStockProducts && $lowStockProducts->num_rows > 0;
           <?php 
           $productsResult->data_seek(0);
           while ($product = $productsResult->fetch_assoc()): 
-            $stockClass = $product['quantity'] <= 10 ? 'bg-danger' : ($product['quantity'] <= 30 ? 'bg-warning' : 'bg-success');
+            // Dùng min_quantity thay vì hardcode
+            $minQty = $product['min_quantity'] ?? 10;
+            if ($product['quantity'] == 0) {
+              $stockClass = 'bg-danger';
+            } elseif ($product['quantity'] <= $minQty) {
+              $stockClass = 'bg-warning';
+            } else {
+              $stockClass = 'bg-success';
+            }
           ?>
           <div class="col-md-4 col-lg-3">
             <div class="card">

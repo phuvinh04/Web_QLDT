@@ -49,20 +49,49 @@ switch ($action) {
 
 /**
  * Lấy danh sách khuyến mãi đang hoạt động
+ * Chỉ lấy khuyến mãi áp dụng cho tất cả sản phẩm (product_id = NULL)
+ * hoặc khuyến mãi cho sản phẩm có trong giỏ hàng
  */
 function getAvailablePromotions($pdo) {
     $today = date('Y-m-d');
     
-    $stmt = $pdo->prepare("
-        SELECT p.*, pr.name as product_name 
-        FROM promotions p
-        LEFT JOIN products pr ON p.product_id = pr.id
-        WHERE p.active = 1 
-        AND (p.start_date IS NULL OR p.start_date <= ?)
-        AND (p.end_date IS NULL OR p.end_date >= ?)
-        ORDER BY p.priority DESC, p.discount_value DESC
-    ");
-    $stmt->execute([$today, $today]);
+    // Lấy cart_data từ request (nếu có)
+    $input = json_decode(file_get_contents('php://input'), true);
+    $cart_data = $input['cart_data'] ?? [];
+    
+    // Nếu có giỏ hàng, lấy danh sách product_id
+    $product_ids = !empty($cart_data) ? array_keys($cart_data) : [];
+    
+    if (!empty($product_ids)) {
+        // Có giỏ hàng: Lấy khuyến mãi cho tất cả SP hoặc SP trong giỏ
+        $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
+        $stmt = $pdo->prepare("
+            SELECT p.*, pr.name as product_name 
+            FROM promotions p
+            LEFT JOIN products pr ON p.product_id = pr.id
+            WHERE p.active = 1 
+            AND (p.start_date IS NULL OR p.start_date <= ?)
+            AND (p.end_date IS NULL OR p.end_date >= ?)
+            AND (p.product_id IS NULL OR p.product_id IN ($placeholders))
+            ORDER BY p.priority DESC, p.discount_value DESC
+        ");
+        $params = array_merge([$today, $today], $product_ids);
+        $stmt->execute($params);
+    } else {
+        // Không có giỏ hàng: Chỉ lấy khuyến mãi cho tất cả SP
+        $stmt = $pdo->prepare("
+            SELECT p.*, pr.name as product_name 
+            FROM promotions p
+            LEFT JOIN products pr ON p.product_id = pr.id
+            WHERE p.active = 1 
+            AND (p.start_date IS NULL OR p.start_date <= ?)
+            AND (p.end_date IS NULL OR p.end_date >= ?)
+            AND p.product_id IS NULL
+            ORDER BY p.priority DESC, p.discount_value DESC
+        ");
+        $stmt->execute([$today, $today]);
+    }
+    
     $promotions = $stmt->fetchAll();
     
     echo json_encode([

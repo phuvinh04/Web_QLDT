@@ -356,7 +356,9 @@ $base_url = "../";
                   <label class="form-label">Vai trò <span style="color:red">*</span></label>
                   <select name="role_id" id="roleId" class="form-control" required>
                     <?php $roles->data_seek(0); while ($role = $roles->fetch_assoc()): ?>
+                    <?php if ($role['id'] != 5): // Ẩn role khách hàng ?>
                     <option value="<?= $role['id'] ?>"><?= ucfirst($role['name']) ?> - <?= $role['description'] ?></option>
+                    <?php endif; ?>
                     <?php endwhile; ?>
                   </select>
                 </div>

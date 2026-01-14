@@ -36,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Vui lòng nhập tên khuyến mãi!";
         } elseif ($discount_value <= 0) {
             $error = "Giá trị giảm giá phải lớn hơn 0!";
+        } elseif ($discount_type === 'percent' && $discount_value > 100) {
+            $error = "Giảm giá theo % không được vượt quá 100%!";
+        } elseif ($discount_type === 'fixed' && $discount_value > 999999999) {
+            $error = "Giá trị giảm giá quá lớn!";
         } else {
             $stmt = $conn->prepare("INSERT INTO promotions (name, description, discount_type, discount_value, product_id, min_amount, start_date, end_date, active, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("sssdiissii", $name, $description, $discount_type, $discount_value, $product_id, $min_amount, $start_date, $end_date, $active, $priority);
@@ -63,6 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Vui lòng nhập tên khuyến mãi!";
         } elseif ($discount_value <= 0) {
             $error = "Giá trị giảm giá phải lớn hơn 0!";
+        } elseif ($discount_type === 'percent' && $discount_value > 100) {
+            $error = "Giảm giá theo % không được vượt quá 100%!";
+        } elseif ($discount_type === 'fixed' && $discount_value > 999999999) {
+            $error = "Giá trị giảm giá quá lớn!";
         } else {
             $stmt = $conn->prepare("UPDATE promotions SET name=?, description=?, discount_type=?, discount_value=?, product_id=?, min_amount=?, start_date=?, end_date=?, active=?, priority=? WHERE id=?");
             $stmt->bind_param("sssdiissiii", $name, $description, $discount_type, $discount_value, $product_id, $min_amount, $start_date, $end_date, $active, $priority, $id);
@@ -302,14 +310,15 @@ FROM promotions")->fetch_assoc();
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Loại giảm giá</label>
-                  <select name="discount_type" id="discountType" class="form-control">
+                  <select name="discount_type" id="discountType" class="form-control" onchange="updateDiscountValidation()">
                     <option value="percent">Giảm theo %</option>
                     <option value="fixed">Giảm cố định (VNĐ)</option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Giá trị giảm <span class="text-danger">*</span></label>
-                  <input type="number" name="discount_value" id="discountValue" class="form-control" step="0.01" min="0" required>
+                  <input type="number" name="discount_value" id="discountValue" class="form-control" step="0.01" min="0.01" max="100" required>
+                  <small class="text-muted" id="discountHint">Tối đa 100%</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Áp dụng cho sản phẩm</label>
@@ -334,12 +343,7 @@ FROM promotions")->fetch_assoc();
                   <label class="form-label">Ngày kết thúc</label>
                   <input type="date" name="end_date" id="endDate" class="form-control">
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Độ ưu tiên</label>
-                  <input type="number" name="priority" id="priority" class="form-control" value="0" min="0">
-                  <small class="text-muted">Số cao hơn = ưu tiên cao hơn</small>
-                </div>
-                <div class="col-md-6 d-flex align-items-end">
+                <div class="col-12">
                   <div class="form-check">
                     <input type="checkbox" name="active" class="form-check-input" id="activeCheck" checked>
                     <label class="form-check-label" for="activeCheck">Kích hoạt</label>
@@ -457,8 +461,6 @@ FROM promotions")->fetch_assoc();
                       }
                       ?>
                     </li>
-                    
-                    <li><i class="bi bi-sort-numeric-up"></i> Ưu tiên: <?php echo $promo['priority']; ?></li>
                   </ul>
                 </div>
               </div>
@@ -485,6 +487,22 @@ FROM promotions")->fetch_assoc();
   <?php include '../components/scripts.php'; ?>
   
   <script>
+    function updateDiscountValidation() {
+      const type = document.getElementById('discountType').value;
+      const input = document.getElementById('discountValue');
+      const hint = document.getElementById('discountHint');
+      
+      if (type === 'percent') {
+        input.max = 100;
+        input.step = 0.01;
+        hint.textContent = 'Tối đa 100%';
+      } else {
+        input.max = 999999999;
+        input.step = 1000;
+        hint.textContent = 'Số tiền giảm (VNĐ)';
+      }
+    }
+    
     function showAddForm() {
       document.getElementById('formTitle').textContent = 'Tạo khuyến mãi mới';
       document.getElementById('formAction').value = 'add';
@@ -497,8 +515,8 @@ FROM promotions")->fetch_assoc();
       document.getElementById('minAmount').value = '0';
       document.getElementById('startDate').value = '';
       document.getElementById('endDate').value = '';
-      document.getElementById('priority').value = '0';
       document.getElementById('activeCheck').checked = true;
+      updateDiscountValidation();
       document.getElementById('promotionFormCard').style.display = 'block';
       document.getElementById('promotionListContainer').style.display = 'none';
       document.getElementById('promotionName').focus();
@@ -521,8 +539,8 @@ FROM promotions")->fetch_assoc();
       document.getElementById('minAmount').value = promo.min_amount || 0;
       document.getElementById('startDate').value = promo.start_date || '';
       document.getElementById('endDate').value = promo.end_date || '';
-      document.getElementById('priority').value = promo.priority || 0;
       document.getElementById('activeCheck').checked = promo.active == 1;
+      updateDiscountValidation();
       document.getElementById('promotionFormCard').style.display = 'block';
       document.getElementById('promotionListContainer').style.display = 'none';
       document.getElementById('promotionName').focus();

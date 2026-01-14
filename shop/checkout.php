@@ -386,7 +386,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         async function loadPromotions() {
             try {
-                const response = await fetch('api/promotions.php?action=get_available');
+                // Gửi cart_data để API lọc khuyến mãi phù hợp
+                const cartData = JSON.parse(localStorage.getItem('cart') || '{}');
+                
+                const response = await fetch('api/promotions.php?action=get_available', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cart_data: cartData
+                    })
+                });
                 const data = await response.json();
                 
                 if (data.success && data.promotions.length > 0) {
@@ -404,7 +415,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             conditionText = ` (Đơn từ ${formatPrice(promo.min_amount)}đ)`;
                         }
                         if (promo.product_name) {
-                            conditionText = ` (${promo.product_name})`;
+                            conditionText = ` (Áp dụng: ${promo.product_name})`;
                         }
                         
                         option.textContent = `${promo.name} ${discountText}${conditionText}`;
