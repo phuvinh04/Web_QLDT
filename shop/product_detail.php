@@ -125,10 +125,10 @@ $GLOBALS['base_url'] = '../';
                 <div class="mb-4">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <span class="text-muted">Số lượng:</span>
-                        <div class="input-group" style="width: 140px;">
-                            <button type="button" class="btn btn-outline-secondary" onclick="changeQty(-1)">−</button>
-                            <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['quantity']; ?>" class="form-control text-center">
-                            <button type="button" class="btn btn-outline-secondary" onclick="changeQty(1)">+</button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary px-3" onclick="changeQty(-1)">−</button>
+                            <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['quantity']; ?>" class="form-control text-center border-secondary" style="width: 60px; border-radius: 0;">
+                            <button type="button" class="btn btn-outline-secondary px-3" onclick="changeQty(1)">+</button>
                         </div>
                     </div>
                     
