@@ -330,6 +330,19 @@ $base_url = "../";
           </form>
         </div>
 
+        <!-- Card Xem Chi tiết -->
+        <div class="card" id="viewDetailCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h4>Chi tiết người dùng</h4>
+              <button class="btn btn-secondary btn-sm" onclick="closeViewModal()">
+                <i class="bi bi-x-lg"></i> Đóng
+              </button>
+            </div>
+            <div id="viewModalContent"></div>
+          </div>
+        </div>
+
         <!-- Form Thêm/Sửa Người dùng -->
         <div class="card" id="userFormCard" style="display: none; margin-bottom: 24px;">
           <div class="card-body">
@@ -461,20 +474,6 @@ $base_url = "../";
     </div>
   </div>
 
-  <!-- View Modal -->
-  <div id="viewModal" class="user-modal-overlay">
-    <div class="user-modal-box">
-      <div class="user-modal-header">
-        <h5>Chi tiết người dùng</h5>
-        <button class="user-modal-close" onclick="closeViewModal()">&times;</button>
-      </div>
-      <div class="user-modal-body" id="viewContent"></div>
-      <div class="user-modal-footer">
-        <button class="btn-cancel" onclick="closeViewModal()">Đóng</button>
-      </div>
-    </div>
-  </div>
-
   <?php include '../components/scripts.php'; ?>
   <script>
     function showAddForm() {
@@ -509,7 +508,10 @@ $base_url = "../";
     }
     
     function closeViewModal() {
-      document.getElementById('viewModal').classList.remove('show');
+      document.getElementById('viewDetailCard').style.display = 'none';
+      document.getElementById('userTableCard').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
     }
     
     function showAlert(message, type) {
@@ -562,16 +564,21 @@ $base_url = "../";
       .then(res => res.json())
       .then(data => {
         const roles = {1: 'Admin', 2: 'Manager', 3: 'Sales', 4: 'Warehouse'};
-        document.getElementById('viewContent').innerHTML = `
-          <p><strong>ID:</strong> #${data.id}</p>
-          <p><strong>Tên đăng nhập:</strong> ${data.username || 'Google User'}</p>
-          <p><strong>Họ tên:</strong> ${data.full_name}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Số điện thoại:</strong> ${data.phone || '-'}</p>
-          <p><strong>Vai trò:</strong> ${roles[data.role_id] || data.role_id}</p>
-          <p><strong>Trạng thái:</strong> ${data.status}</p>
+        document.getElementById('viewModalContent').innerHTML = `
+          <table style="width: 100%;">
+            <tr><td style="padding: 8px 0; color: #64748b; width: 140px;">ID</td><td style="padding: 8px 0; font-weight: 600;">#${data.id}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Tên đăng nhập</td><td style="padding: 8px 0;">${data.username || 'Google User'}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Họ tên</td><td style="padding: 8px 0; font-weight: 600;">${data.full_name}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Email</td><td style="padding: 8px 0;">${data.email}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Số điện thoại</td><td style="padding: 8px 0;">${data.phone || '<span style="color:#94a3b8">Chưa có</span>'}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Vai trò</td><td style="padding: 8px 0;"><span class="badge badge-${data.role_id == 1 ? 'admin' : data.role_id == 2 ? 'manager' : data.role_id == 3 ? 'sales' : 'warehouse'}">${roles[data.role_id] || data.role_id}</span></td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Trạng thái</td><td style="padding: 8px 0;"><span class="badge badge-${data.status == 'active' ? 'success' : 'secondary'}">${data.status == 'active' ? 'Active' : 'Inactive'}</span></td></tr>
+          </table>
         `;
-        document.getElementById('viewModal').classList.add('show');
+        document.getElementById('viewDetailCard').style.display = 'block';
+        document.getElementById('userTableCard').style.display = 'none';
+        const pagination = document.getElementById('paginationContainer');
+        if (pagination) pagination.style.display = 'none';
       });
     }
     

@@ -426,6 +426,26 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
           </div>
         </div>
 
+        <!-- Card Xem Chi tiết -->
+        <div class="card" id="viewDetailCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h4>Chi tiết sản phẩm</h4>
+              <button class="btn btn-secondary btn-sm" onclick="closeViewModal()">
+                <i class="bi bi-x-lg"></i> Đóng
+              </button>
+            </div>
+            <div id="viewModalContent"></div>
+            <?php if ($canEdit): ?>
+            <div style="margin-top: 20px;">
+              <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                <i class="bi bi-pencil"></i> Sửa
+              </button>
+            </div>
+            <?php endif; ?>
+          </div>
+        </div>
+
         <div style="margin-bottom: 16px; color: var(--text-muted);" id="productCount">
           Hiển thị <?php echo count($products); ?> / <?php echo $totalProducts; ?> sản phẩm
         </div>
@@ -500,23 +520,6 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
     </div>
   </div>
 
-  <!-- Modal Xem Chi tiết -->
-  <div class="modal-overlay" id="viewModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Chi tiết sản phẩm</h3>
-        <button class="action-btn" onclick="closeViewModal()">&times;</button>
-      </div>
-      <div class="modal-body" id="viewModalContent"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeViewModal()">Đóng</button>
-        <?php if ($canEdit): ?>
-        <button type="button" class="btn btn-primary" id="editFromViewBtn"><i class="bi bi-pencil"></i> Sửa</button>
-        <?php endif; ?>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal Xóa -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal" style="max-width: 400px;">
@@ -575,7 +578,11 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
     }
 
     function closeViewModal() {
-      document.getElementById('viewModal')?.classList.remove('show');
+      document.getElementById('viewDetailCard').style.display = 'none';
+      document.getElementById('productListContainer').style.display = '';
+      document.getElementById('productCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
     }
 
     function closeDeleteModal() {
@@ -600,7 +607,11 @@ $filterParams = ['category_id' => $categoryFilter, 'brand_id' => $brandFilter, '
               <tr><td style="padding: 8px 0; color: #64748b;">Mô tả</td><td style="padding: 8px 0;">${p.description || '-'}</td></tr>
             </table>`;
           currentProductId = id;
-          document.getElementById('viewModal').classList.add('show');
+          document.getElementById('viewDetailCard').style.display = 'block';
+          document.getElementById('productListContainer').style.display = 'none';
+          document.getElementById('productCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
         } else {
           showAlert(result.message, 'danger');
         }

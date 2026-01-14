@@ -409,6 +409,27 @@ $paymentLabels = [
           </form>
         </div>
 
+        <!-- Card Xem Chi tiết -->
+        <div class="card" id="viewDetailCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h4><i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng <span id="viewOrderNumber"></span></h4>
+              <button class="btn btn-secondary btn-sm" onclick="closeViewModal()">
+                <i class="bi bi-x-lg"></i> Đóng
+              </button>
+            </div>
+            <div id="viewModalContent"></div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+              <button type="button" class="btn btn-secondary" onclick="closeViewModal()">
+                <i class="bi bi-x-circle"></i> Đóng
+              </button>
+              <button type="button" class="btn btn-primary" onclick="printOrder()">
+                <i class="bi bi-printer"></i> In đơn
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Form Tạo/Sửa Đơn hàng -->
         <div class="card" id="orderFormCard" style="display: none; margin-bottom: 24px;">
           <div class="card-body">
@@ -597,27 +618,6 @@ $paymentLabels = [
     </div>
   </div>
 
-  <!-- Modal Xem Chi tiết -->
-  <div class="modal-overlay" id="viewModal">
-    <div class="modal" style="max-width: 650px;">
-      <div class="modal-header">
-        <h3><i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng <span id="viewOrderNumber"></span></h3>
-        <button class="action-btn" onclick="closeViewModal()"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body" id="viewModalBody">
-        <!-- Content loaded via JS -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeViewModal()">
-          <i class="bi bi-x-circle"></i> Đóng
-        </button>
-        <button type="button" class="btn btn-primary" onclick="printOrder()">
-          <i class="bi bi-printer"></i> In đơn
-        </button>
-      </div>
-    </div>
-  </div>
-
   <?php include '../components/scripts.php'; ?>
   
   <script>
@@ -659,7 +659,11 @@ $paymentLabels = [
     }
 
     function closeViewModal() {
-      document.getElementById('viewModal').classList.remove('show');
+      document.getElementById('viewDetailCard').style.display = 'none';
+      document.getElementById('orderListContainer').style.display = '';
+      document.getElementById('orderCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
     }
 
     // Product row management
@@ -823,7 +827,7 @@ $paymentLabels = [
             cod: 'COD'
           };
 
-          document.getElementById('viewModalBody').innerHTML = `
+          document.getElementById('viewModalContent').innerHTML = `
             <div class="order-detail-section">
               <h4><i class="bi bi-info-circle"></i> Thông tin đơn hàng</h4>
               <div class="detail-row">
@@ -889,7 +893,11 @@ $paymentLabels = [
             ${order.notes ? `<div class="mt-3"><strong>Ghi chú:</strong> ${order.notes}</div>` : ''}
           `;
 
-          document.getElementById('viewModal').classList.add('show');
+          document.getElementById('viewDetailCard').style.display = 'block';
+          document.getElementById('orderListContainer').style.display = 'none';
+          document.getElementById('orderCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
         }
       } catch (error) {
         showAlert('danger', 'Không thể tải thông tin đơn hàng');

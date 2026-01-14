@@ -323,6 +323,26 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
           </div>
         </div>
 
+        <!-- Card Xem Chi tiết -->
+        <div class="card" id="viewDetailCard" style="display: none; margin-bottom: 24px;">
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h4>Chi tiết khách hàng</h4>
+              <button class="btn btn-secondary btn-sm" onclick="closeViewModal()">
+                <i class="bi bi-x-lg"></i> Đóng
+              </button>
+            </div>
+            <div id="viewModalContent"></div>
+            <?php if ($canEdit): ?>
+            <div style="margin-top: 20px;">
+              <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                <i class="bi bi-pencil"></i> Sửa
+              </button>
+            </div>
+            <?php endif; ?>
+          </div>
+        </div>
+
         <div style="margin-bottom: 16px; color: var(--text-muted);" id="customerCount">
           Hiển thị <?php echo count($customers); ?> / <?php echo $totalCustomers; ?> khách hàng
         </div>
@@ -414,23 +434,6 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
     </div>
   </div>
 
-  <!-- Modal Xem Chi tiết -->
-  <div class="modal-overlay" id="viewModal">
-    <div class="modal" style="max-width: 600px; width: 90%;">
-      <div class="modal-header">
-        <h3>Chi tiết khách hàng</h3>
-        <button class="action-btn" onclick="closeViewModal()"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <div class="modal-body" id="viewModalContent"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeViewModal()">Đóng</button>
-        <?php if ($canEdit): ?>
-        <button type="button" class="btn btn-primary" id="editFromViewBtn"><i class="bi bi-pencil"></i> Sửa</button>
-        <?php endif; ?>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal Xóa -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal" style="max-width: 400px; width: 90%;">
@@ -491,7 +494,11 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
     }
 
     function closeViewModal() {
-      document.getElementById('viewModal')?.classList.remove('show');
+      document.getElementById('viewDetailCard').style.display = 'none';
+      document.getElementById('customerListContainer').style.display = '';
+      document.getElementById('customerCount').style.display = '';
+      const pagination = document.getElementById('paginationContainer');
+      if (pagination) pagination.style.display = '';
     }
 
     function closeDeleteModal() {
@@ -544,7 +551,11 @@ $filterParams = ['status' => $statusFilter, 'city' => $cityFilter, 'sort' => $so
             ${ordersHtml}
           `;
           currentCustomerId = id;
-          document.getElementById('viewModal').classList.add('show');
+          document.getElementById('viewDetailCard').style.display = 'block';
+          document.getElementById('customerListContainer').style.display = 'none';
+          document.getElementById('customerCount').style.display = 'none';
+          const pagination = document.getElementById('paginationContainer');
+          if (pagination) pagination.style.display = 'none';
         } else {
           showAlert(result.message, 'danger');
         }
