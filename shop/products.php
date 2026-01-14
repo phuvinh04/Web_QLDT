@@ -271,6 +271,22 @@ $GLOBALS['base_url'] = '../';
     <?php include 'components/shop_footer.php'; ?>
     <?php include 'components/modals.php'; ?>
 
+    <!-- Toast notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="successToastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="errorToastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -280,6 +296,6 @@ $GLOBALS['base_url'] = '../';
         window.userId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null'; ?>;
         window.userRole = <?php echo isset($_SESSION['role_id']) ? $_SESSION['role_id'] : 'null'; ?>;
     </script>
-    <script src="assets/shop.js"></script>
+    <script src="assets/shop.js?v=2"></script>
 </body>
 </html>

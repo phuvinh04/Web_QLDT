@@ -1,10 +1,18 @@
 <?php
-header('Content-Type: application/json');
+// Prevent any HTML output
+error_reporting(0);
+ini_set('display_errors', 0);
 
-// Include config
-require_once '../../config.php';
+header('Content-Type: application/json; charset=utf-8');
 
 try {
+    // Include config
+    $configPath = __DIR__ . '/../../config.php';
+    if (!file_exists($configPath)) {
+        throw new Exception('Config file not found');
+    }
+    require_once $configPath;
+
     // Kết nối database
     $pdo = new PDO(
         "mysql:host=" . env('DB_HOST', 'localhost') . ";dbname=" . env('DB_NAME', 'db_quanlydienthoai') . ";charset=utf8mb4",
@@ -42,7 +50,7 @@ try {
               WHERE p.id IN ($placeholders) AND p.status = 'active'";
     
     $stmt = $pdo->prepare($query);
-    $stmt->execute($ids);
+    $stmt->execute(array_values($ids));
     $products = $stmt->fetchAll();
 
     echo json_encode([
@@ -53,7 +61,6 @@ try {
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => 'Lỗi server: ' . $e->getMessage()
+        'message' => 'Lỗi: ' . $e->getMessage()
     ]);
 }
-?>

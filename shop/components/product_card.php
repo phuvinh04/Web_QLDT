@@ -18,17 +18,22 @@ function renderProductCard($product) {
                 // Determine base path for images
                 $image_base = isset($GLOBALS['base_url']) ? $GLOBALS['base_url'] : '../';
                 ?>
+                <a href="product_detail.php?id=<?php echo $product_id; ?>">
                 <?php if (!empty($product['image'])): ?>
-                    <img src="<?php echo $image_base; ?>assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
+                    <img src="<?php echo $image_base; ?>assets/images/products/<?php echo htmlspecialchars($product['image']); ?>" 
                          alt="<?php echo htmlspecialchars($product['name']); ?>" 
                          class="product-image"
-                         onclick="showProductModal(<?php echo $product_id; ?>)"
-                         loading="lazy">
+                         loading="lazy"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="no-image" style="display: none;">
+                        <i class="bi bi-phone"></i>
+                    </div>
                 <?php else: ?>
-                    <div class="no-image" onclick="showProductModal(<?php echo $product_id; ?>)">
+                    <div class="no-image">
                         <i class="bi bi-phone"></i>
                     </div>
                 <?php endif; ?>
+                </a>
                 
                 <div class="product-badges">
                     <?php if ($discount_percent > 0): ?>
@@ -61,26 +66,6 @@ function renderProductCard($product) {
                         <?php echo htmlspecialchars($product['name']); ?>
                     </a>
                 </h5>
-                
-                <div class="product-rating">
-                    <?php 
-                    $rating = isset($product['rating']) ? $product['rating'] : 4.5;
-                    $full_stars = floor($rating);
-                    $half_star = ($rating - $full_stars) >= 0.5;
-                    ?>
-                    <div class="stars">
-                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <?php if ($i <= $full_stars): ?>
-                                <i class="bi bi-star-fill text-warning"></i>
-                            <?php elseif ($i == $full_stars + 1 && $half_star): ?>
-                                <i class="bi bi-star-half text-warning"></i>
-                            <?php else: ?>
-                                <i class="bi bi-star text-muted"></i>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-                        <span class="rating-text">(<?php echo number_format($rating, 1); ?>)</span>
-                    </div>
-                </div>
                 
                 <div class="product-price-container">
                     <?php if ($discount_percent > 0): ?>

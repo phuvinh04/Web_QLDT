@@ -1,5 +1,5 @@
 <?php
-// Checkout Page
+// Checkout Page - Using LocalStorage Cart
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -31,99 +31,107 @@ try {
 
 $user_id = $_SESSION['user_id'];
 
-// Get cart items
-$cart_query = "
-    SELECT c.*, p.name, p.price, p.image, p.quantity as stock_quantity, cat.name as category_name
-    FROM shopping_cart c
-    JOIN products p ON c.product_id = p.id
-    LEFT JOIN categories cat ON p.category_id = cat.id
-    WHERE c.user_id = ? AND p.status = 'active'
-    ORDER BY c.created_at DESC
-";
-$cart_stmt = $pdo->prepare($cart_query);
-$cart_stmt->execute([$user_id]);
-$cart_items = $cart_stmt->fetchAll();
-
-// Redirect if cart is empty
-if (empty($cart_items)) {
-    header("Location: cart.php");
-    exit;
-}
-
-// Calculate totals
-$subtotal = 0;
-foreach ($cart_items as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-}
-$shipping = $subtotal >= 500000 ? 0 : 30000;
-$tax = $subtotal * 0.1;
-$total = $subtotal + $shipping + $tax;
-
-
 // Get user info
 $user_query = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $user_query->execute([$user_id]);
 $user = $user_query->fetch();
 
 $error_message = '';
-$success_message = '';
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle form submission (AJAX)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'place_order') {
+    header('Content-Type: application/json');
+    
     $full_name = trim($_POST['full_name'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $note = trim($_POST['note'] ?? '');
+    $cart_data = json_decode($_POST['cart_data'] ?? '{}', true);
     
     if (empty($full_name) || empty($phone) || empty($address)) {
-        $error_message = 'Vui lòng điền đầy đủ thông tin giao hàng';
-    } else {
-        try {
-            $pdo->beginTransaction();
+        echo json_encode(['success' => false, 'message' => 'Vui lòng điền đầy đủ thông tin giao hàng']);
+        exit;
+    }
+    
+    if (empty($cart_data)) {
+        echo json_encode(['success' => false, 'message' => 'Giỏ hàng trống']);
+        exit;
+    }
+    
+    try {
+        // Get product details and validate
+        $product_ids = array_keys($cart_data);
+        $placeholders = str_repeat('?,', count($product_ids) - 1) . '?';
+        
+        $products_stmt = $pdo->prepare("SELECT id, name, price, quantity FROM products WHERE id IN ($placeholders) AND status = 'active'");
+        $products_stmt->execute($product_ids);
+        $products = $products_stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (empty($products)) {
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy sản phẩm']);
+            exit;
+        }
+        
+        // Calculate totals
+        $subtotal = 0;
+        $order_items = [];
+        
+        foreach ($products as $product) {
+            $qty = (int)($cart_data[$product['id']] ?? 0);
+            if ($qty <= 0) continue;
             
-            // Create order
-            $order_code = 'HD' . date('YmdHis') . rand(100, 999);
-            
-            $order_stmt = $pdo->prepare("
-                INSERT INTO orders (order_number, user_id, subtotal, tax, total_amount, payment_method, notes, status)
-                VALUES (?, ?, ?, ?, ?, 'cod', ?, 'pending')
-            ");
-            $order_stmt->execute([
-                $order_code, $user_id, $subtotal, $tax, $total,
-                "Tên: $full_name\nSĐT: $phone\nĐịa chỉ: $address\nGhi chú: $note"
-            ]);
-            $order_id = $pdo->lastInsertId();
-            
-            // Add order items (subtotal is auto-generated column)
-            $item_stmt = $pdo->prepare("
-                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-                VALUES (?, ?, ?, ?)
-            ");
-            
-            foreach ($cart_items as $item) {
-                $item_stmt->execute([
-                    $order_id, $item['product_id'], $item['quantity'], $item['price']
-                ]);
-                
-                // Update product stock
-                $update_stock = $pdo->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
-                $update_stock->execute([$item['quantity'], $item['product_id']]);
+            if ($qty > $product['quantity']) {
+                echo json_encode(['success' => false, 'message' => "Sản phẩm '{$product['name']}' không đủ số lượng"]);
+                exit;
             }
             
-            // Clear cart
-            $clear_cart = $pdo->prepare("DELETE FROM shopping_cart WHERE user_id = ?");
-            $clear_cart->execute([$user_id]);
-            
-            $pdo->commit();
-            
-            // Redirect to success page
-            header("Location: order_success.php?order=" . $order_code);
-            exit;
-            
-        } catch (Exception $e) {
-            $pdo->rollBack();
-            $error_message = 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.';
+            $subtotal += $product['price'] * $qty;
+            $order_items[] = [
+                'product_id' => $product['id'],
+                'quantity' => $qty,
+                'price' => $product['price']
+            ];
         }
+        
+        $shipping = $subtotal >= 500000 ? 0 : 30000;
+        $tax = $subtotal * 0.1;
+        $total = $subtotal + $shipping + $tax;
+        
+        $pdo->beginTransaction();
+        
+        // Create order
+        $order_code = 'HD' . date('YmdHis') . rand(100, 999);
+        
+        $order_stmt = $pdo->prepare("
+            INSERT INTO orders (order_number, user_id, subtotal, tax, total_amount, payment_method, notes, status)
+            VALUES (?, ?, ?, ?, ?, 'cod', ?, 'pending')
+        ");
+        $order_stmt->execute([
+            $order_code, $user_id, $subtotal, $tax, $total,
+            "Tên: $full_name\nSĐT: $phone\nĐịa chỉ: $address\nGhi chú: $note"
+        ]);
+        $order_id = $pdo->lastInsertId();
+        
+        // Add order items
+        $item_stmt = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)");
+        
+        foreach ($order_items as $item) {
+            $item_stmt->execute([$order_id, $item['product_id'], $item['quantity'], $item['price']]);
+            
+            // Update product stock
+            $update_stock = $pdo->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
+            $update_stock->execute([$item['quantity'], $item['product_id']]);
+        }
+        
+        $pdo->commit();
+        
+        echo json_encode(['success' => true, 'order_code' => $order_code]);
+        exit;
+        
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        exit;
     }
 }
 ?>
@@ -146,8 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="breadcrumb-section">
         <div class="container">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Trang chủ</a></li>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="index.php"><i class="bi bi-house"></i> Trang chủ</a></li>
                     <li class="breadcrumb-item"><a href="cart.php">Giỏ hàng</a></li>
                     <li class="breadcrumb-item active">Thanh toán</li>
                 </ol>
@@ -155,21 +163,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <div class="container">
-        <div class="page-header">
+    <div class="container py-4">
+        <div class="page-header mb-4">
             <h1 class="page-title"><i class="bi bi-credit-card"></i> Thanh toán</h1>
         </div>
 
-        <?php if ($error_message): ?>
-            <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?php echo $error_message; ?></div>
-        <?php endif; ?>
+        <div id="errorAlert" class="alert alert-danger" style="display: none;"></div>
 
-        <form method="POST">
+        <form id="checkoutForm">
+            <input type="hidden" name="action" value="place_order">
             <div class="row">
                 <div class="col-lg-7">
                     <!-- Shipping Info -->
-                    <div class="checkout-section mb-4">
-                        <h5 class="mb-3"><i class="bi bi-geo-alt"></i> Thông tin giao hàng</h5>
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Thông tin giao hàng</h5>
                         <div class="card">
                             <div class="card-body">
                                 <div class="mb-3">
@@ -195,18 +202,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Payment Method -->
-                    <div class="checkout-section">
-                        <h5 class="mb-3"><i class="bi bi-wallet2"></i> Phương thức thanh toán</h5>
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="bi bi-wallet2 me-2"></i>Phương thức thanh toán</h5>
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-cash-coin text-success me-2" style="font-size: 1.5rem;"></i>
+                                    <i class="bi bi-cash-coin text-success me-3" style="font-size: 2rem;"></i>
                                     <div>
                                         <strong>Thanh toán khi nhận hàng (COD)</strong>
                                         <p class="text-muted mb-0 small">Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</p>
                                     </div>
                                 </div>
-                                <input type="hidden" name="payment_method" value="cod">
                             </div>
                         </div>
                     </div>
@@ -214,46 +220,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="col-lg-5">
                     <!-- Order Summary -->
-                    <div class="cart-summary">
-                        <h5><i class="bi bi-receipt"></i> Đơn hàng của bạn</h5>
-                        
-                        <div class="order-items mb-3">
-                            <?php foreach ($cart_items as $item): ?>
-                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                    <div>
-                                        <span class="fw-medium"><?php echo htmlspecialchars($item['name']); ?></span>
-                                        <small class="text-muted d-block">x<?php echo $item['quantity']; ?></small>
-                                    </div>
-                                    <span><?php echo number_format($item['price'] * $item['quantity'], 0, ',', '.'); ?>₫</span>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Đơn hàng của bạn</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="orderItems" class="mb-3">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                    <span class="ms-2">Đang tải...</span>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                        
-                        <div class="summary-row">
-                            <span>Tạm tính:</span>
-                            <span><?php echo number_format($subtotal, 0, ',', '.'); ?>₫</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Phí vận chuyển:</span>
-                            <span><?php echo $shipping == 0 ? '<span class="text-success">Miễn phí</span>' : number_format($shipping, 0, ',', '.') . '₫'; ?></span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Thuế (10%):</span>
-                            <span><?php echo number_format($tax, 0, ',', '.'); ?>₫</span>
-                        </div>
-                        <hr>
-                        <div class="summary-row total">
-                            <span><strong>Tổng cộng:</strong></span>
-                            <span class="text-danger"><strong><?php echo number_format($total, 0, ',', '.'); ?>₫</strong></span>
-                        </div>
-                        
-                        <div class="checkout-buttons mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">
-                                <i class="bi bi-check-circle"></i> Đặt hàng
-                            </button>
-                            <a href="cart.php" class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-arrow-left"></i> Quay lại giỏ hàng
-                            </a>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tạm tính:</span>
+                                <span id="orderSubtotal">0₫</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Phí vận chuyển:</span>
+                                <span id="orderShipping">Tính sau</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Thuế (10%):</span>
+                                <span id="orderTax">0₫</span>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between mb-3">
+                                <strong>Tổng cộng:</strong>
+                                <strong id="orderTotal" class="text-danger">0₫</strong>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="placeOrderBtn">
+                                    <i class="bi bi-check-circle me-2"></i>Đặt hàng
+                                </button>
+                                <a href="cart.php" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Quay lại giỏ hàng
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -262,6 +270,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <?php include 'components/shop_footer.php'; ?>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/shop.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const cart = JSON.parse(localStorage.getItem('shop_cart') || '{}');
+            const productIds = Object.keys(cart).filter(id => cart[id] > 0);
+            
+            if (productIds.length === 0) {
+                window.location.href = 'cart.php';
+                return;
+            }
+            
+            // Fetch product details
+            try {
+                const response = await fetch(`api/cart_items.php?ids=${productIds.join(',')}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderOrderItems(data.products, cart);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        function renderOrderItems(products, cart) {
+            const container = document.getElementById('orderItems');
+            let html = '';
+            let subtotal = 0;
+            
+            products.forEach(product => {
+                const qty = cart[product.id] || 0;
+                if (qty <= 0) return;
+                
+                const itemTotal = product.price * qty;
+                subtotal += itemTotal;
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <span class="fw-medium">${product.name}</span>
+                            <small class="text-muted d-block">x${qty}</small>
+                        </div>
+                        <span>${formatPrice(itemTotal)}₫</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Calculate totals
+            const shipping = subtotal >= 500000 ? 0 : 30000;
+            const tax = subtotal * 0.1;
+            const total = subtotal + shipping + tax;
+            
+            document.getElementById('orderSubtotal').textContent = formatPrice(subtotal) + '₫';
+            document.getElementById('orderShipping').innerHTML = shipping === 0 
+                ? '<span class="text-success">Miễn phí</span>' 
+                : formatPrice(shipping) + '₫';
+            document.getElementById('orderTax').textContent = formatPrice(tax) + '₫';
+            document.getElementById('orderTotal').textContent = formatPrice(total) + '₫';
+        }
+        
+        function formatPrice(price) {
+            return new Intl.NumberFormat('vi-VN').format(price);
+        }
+        
+        // Handle form submission
+        document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('placeOrderBtn');
+            const errorAlert = document.getElementById('errorAlert');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+            errorAlert.style.display = 'none';
+            
+            const formData = new FormData(this);
+            formData.append('cart_data', localStorage.getItem('shop_cart') || '{}');
+            
+            try {
+                const response = await fetch('checkout.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Clear cart
+                    localStorage.removeItem('shop_cart');
+                    // Redirect to success page
+                    window.location.href = 'order_success.php?order=' + result.order_code;
+                } else {
+                    errorAlert.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + result.message;
+                    errorAlert.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Đặt hàng';
+                }
+            } catch (error) {
+                errorAlert.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Lỗi kết nối server';
+                errorAlert.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Đặt hàng';
+            }
+        });
+    </script>
 </body>
 </html>

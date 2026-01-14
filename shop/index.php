@@ -198,6 +198,6 @@ $GLOBALS['base_url'] = '../';
         window.userId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null'; ?>;
         window.userRole = <?php echo isset($_SESSION['role_id']) ? $_SESSION['role_id'] : 'null'; ?>;
     </script>
-    <script src="assets/shop.js"></script>
+    <script src="assets/shop.js?v=2"></script>
 </body>
 </html>

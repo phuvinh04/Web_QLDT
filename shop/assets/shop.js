@@ -1,29 +1,32 @@
-// Shop JavaScript Functions
+// Shop JavaScript Functions - LocalStorage Cart
 class ShopManager {
   constructor() {
-    this.cart = {}; // We'll use database instead of localStorage
+    this.cart = this.loadCart();
     this.init();
   }
 
   init() {
-    this.loadCartCount();
+    this.updateCartBadge();
     this.bindEvents();
   }
 
-  async loadCartCount() {
-    if (this.isLoggedIn()) {
-      try {
-        const response = await fetch("api/get_cart_count.php");
-        const data = await response.json();
-        this.updateCartBadgeFromServer(data.cart_count);
-      } catch (error) {
-        console.error("Error loading cart count:", error);
-      }
+  // Load cart from localStorage
+  loadCart() {
+    try {
+      const cart = localStorage.getItem("shop_cart");
+      return cart ? JSON.parse(cart) : {};
+    } catch (e) {
+      return {};
     }
   }
 
+  // Save cart to localStorage
+  saveCart() {
+    localStorage.setItem("shop_cart", JSON.stringify(this.cart));
+    this.updateCartBadge();
+  }
+
   bindEvents() {
-    // Order tracking form
     const orderTrackingForm = document.getElementById("orderTrackingForm");
     if (orderTrackingForm) {
       orderTrackingForm.addEventListener("submit", (e) => {
@@ -31,347 +34,282 @@ class ShopManager {
         this.trackOrder();
       });
     }
-
-    // View toggle
-    const viewButtons = document.querySelectorAll('input[name="view"]');
-    viewButtons.forEach((btn) => {
-      btn.addEventListener("change", (e) => {
-        this.toggleView(e.target.value);
-      });
-    });
   }
 
-  // Cart Management
-  async addToCart(productId, quantity = 1) {
-    // Find the button that was clicked
+  // Add to cart using localStorage
+  addToCart(productId, quantity = 1) {
     const button = document.querySelector(
-      `[onclick="addToCart(${productId})"]`
+      `[onclick*="addToCart(${productId}"]`
     );
-    const productCard = button?.closest(".product-card");
 
-    try {
-      // Show loading state
-      if (button) {
-        button.classList.add("loading");
-        button.disabled = true;
-      }
-      if (productCard) {
-        productCard.classList.add("loading");
-      }
+    if (button) {
+      button.classList.add("loading");
+      button.disabled = true;
+    }
 
-      const formData = new FormData();
-      formData.append("product_id", productId);
-      formData.append("quantity", quantity);
+    // Add to cart
+    if (this.cart[productId]) {
+      this.cart[productId] += quantity;
+    } else {
+      this.cart[productId] = quantity;
+    }
 
-      const response = await fetch("api/add_to_cart.php", {
-        method: "POST",
-        body: formData,
-      });
+    this.saveCart();
+    this.showToast("success", "Đã thêm sản phẩm vào giỏ hàng!");
 
-      const data = await response.json();
+    // Animate cart badge
+    const badges = document.querySelectorAll(".nav-link .badge");
+    badges.forEach((badge) => {
+      badge.classList.add("animate");
+      setTimeout(() => badge.classList.remove("animate"), 500);
+    });
 
-      if (data.success) {
-        this.showToast("success", data.message);
-        this.updateCartBadgeFromServer(data.cart_count);
-
-        // Animate cart badge
-        const badges = document.querySelectorAll(".nav-link .badge");
-        badges.forEach((badge) => {
-          badge.classList.add("animate");
-          setTimeout(() => badge.classList.remove("animate"), 500);
-        });
-      } else {
-        if (data.redirect) {
-          // User not logged in
-          this.showLoginRequired();
-        } else {
-          this.showToast("error", data.message);
-        }
-      }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      this.showToast("error", "Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng");
-    } finally {
-      // Remove loading state
-      if (button) {
+    if (button) {
+      setTimeout(() => {
         button.classList.remove("loading");
         button.disabled = false;
-      }
-      if (productCard) {
-        productCard.classList.remove("loading");
-      }
+      }, 300);
     }
   }
 
   removeFromCart(productId) {
     delete this.cart[productId];
     this.saveCart();
-    this.updateCartBadge();
-    this.loadCartModal();
+    this.renderCartPage();
   }
 
   updateCartQuantity(productId, quantity) {
+    quantity = parseInt(quantity);
     if (quantity <= 0) {
       this.removeFromCart(productId);
     } else {
       this.cart[productId] = quantity;
       this.saveCart();
-      this.updateCartBadge();
+      this.renderCartPage();
     }
-  }
-
-  saveCart() {
-    localStorage.setItem("shop_cart", JSON.stringify(this.cart));
   }
 
   updateCartBadge() {
     const totalItems = Object.values(this.cart).reduce(
-      (sum, qty) => sum + qty,
+      (sum, qty) => sum + parseInt(qty),
       0
     );
-    this.updateCartBadgeFromServer(totalItems);
-  }
-
-  updateCartBadgeFromServer(count) {
-    const badges = document.querySelectorAll(".nav-link .badge");
+    const badges = document.querySelectorAll(".nav-link .badge, .cart-badge");
     badges.forEach((badge) => {
-      badge.textContent = count;
-      badge.style.display = count > 0 ? "inline" : "none";
+      badge.textContent = totalItems;
+      badge.style.display = totalItems > 0 ? "inline" : "none";
     });
   }
 
-  // Modal Management
-  async showProductModal(productId) {
-    const modal = new bootstrap.Modal(document.getElementById("productModal"));
-    const modalBody = document.getElementById("productModalBody");
+  getCartCount() {
+    return Object.values(this.cart).reduce(
+      (sum, qty) => sum + parseInt(qty),
+      0
+    );
+  }
 
-    // Show loading
-    modalBody.innerHTML = `
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Đang tải...</span>
-                </div>
-            </div>
-        `;
+  getCartItems() {
+    return this.cart;
+  }
 
-    modal.show();
+  clearCart() {
+    this.cart = {};
+    this.saveCart();
+  }
 
+  // Render cart page content
+  async renderCartPage() {
+    const cartContainer = document.getElementById("cartContainer");
+    if (!cartContainer) return;
+
+    const productIds = Object.keys(this.cart).filter((id) => this.cart[id] > 0);
+
+    if (productIds.length === 0) {
+      cartContainer.innerHTML = `
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-cart-x" style="font-size: 5rem; color: #6c757d;"></i>
+            <h4 class="mt-3">Giỏ hàng trống</h4>
+            <p class="text-muted">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
+            <a href="products.php" class="btn btn-primary mt-3">
+              <i class="bi bi-grid me-2"></i>Xem sản phẩm
+            </a>
+          </div>
+        </div>
+      `;
+      this.updateCartSummary(0);
+
+      // Update cart count
+      const cartCountEl = document.getElementById("cartCount");
+      if (cartCountEl) cartCountEl.textContent = "0 sản phẩm trong giỏ hàng";
+
+      // Disable checkout button
+      const checkoutBtn = document.getElementById("checkoutBtn");
+      if (checkoutBtn) {
+        checkoutBtn.style.pointerEvents = "none";
+        checkoutBtn.style.opacity = "0.5";
+      }
+      return;
+    }
+
+    // Fetch product details
     try {
-      const response = await fetch(`api/product_detail.php?id=${productId}`);
-      const data = await response.json();
+      const response = await fetch(
+        `api/cart_items.php?ids=${productIds.join(",")}`
+      );
+      const text = await response.text();
+
+      // Try to parse JSON
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Invalid JSON response:", text);
+        cartContainer.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>Lỗi tải dữ liệu giỏ hàng</div>`;
+        return;
+      }
 
       if (data.success) {
-        modalBody.innerHTML = this.renderProductModalContent(data.product);
+        this.renderCartItems(data.products);
       } else {
-        modalBody.innerHTML = `
-                    <div class="text-center py-5">
-                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Không thể tải thông tin sản phẩm</h5>
-                    </div>
-                `;
+        cartContainer.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>${
+          data.message || "Không thể tải giỏ hàng"
+        }</div>`;
       }
     } catch (error) {
-      modalBody.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-wifi-off text-danger" style="font-size: 3rem;"></i>
-                    <h5 class="mt-3">Lỗi kết nối</h5>
-                </div>
-            `;
+      console.error("Error loading cart:", error);
+      cartContainer.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>Lỗi kết nối server</div>`;
     }
   }
 
-  renderProductModalContent(product) {
-    return `
-            <div class="row">
-                <div class="col-md-6">
-                    ${
-                      product.image
-                        ? `<img src="assets/uploads/${product.image}" alt="${product.name}" class="product-modal-image">`
-                        : `<div class="product-modal-image no-image d-flex align-items-center justify-content-center">
-                            <i class="bi bi-phone" style="font-size: 4rem; color: var(--text-muted);"></i>
-                        </div>`
-                    }
-                </div>
-                <div class="col-md-6">
-                    <div class="product-modal-info">
-                        <span class="badge bg-primary mb-2">${
-                          product.category_name || "Điện thoại"
-                        }</span>
-                        <h3>${product.name}</h3>
-                        <div class="product-modal-price">${this.formatPrice(
-                          product.price
-                        )}₫</div>
-                        
-                        ${
-                          product.description
-                            ? `<div class="product-modal-description">${product.description}</div>`
-                            : ""
-                        }
-                        
-                        <div class="product-modal-specs">
-                            <h6>Thông số kỹ thuật</h6>
-                            <div class="spec-item">
-                                <span class="spec-label">Mã sản phẩm:</span>
-                                <span class="spec-value">${product.sku}</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Tình trạng:</span>
-                                <span class="spec-value ${
-                                  product.quantity > 0
-                                    ? "text-success"
-                                    : "text-danger"
-                                }">
-                                    ${
-                                      product.quantity > 0
-                                        ? `Còn ${product.quantity} sản phẩm`
-                                        : "Hết hàng"
-                                    }
-                                </span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Danh mục:</span>
-                                <span class="spec-value">${
-                                  product.category_name || "Điện thoại"
-                                }</span>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex gap-2 mt-4">
-                            ${
-                              product.quantity > 0
-                                ? `<button class="btn btn-primary flex-fill" onclick="shopManager.addToCart(${product.id})">
-                                    <i class="bi bi-cart-plus"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-success" onclick="shopManager.buyNow(${product.id})">
-                                    <i class="bi bi-lightning"></i> Mua ngay
-                                </button>`
-                                : `<button class="btn btn-secondary flex-fill" disabled>
-                                    <i class="bi bi-x-circle"></i> Hết hàng
-                                </button>`
-                            }
-                        </div>
-                        
+  renderCartItems(products) {
+    const cartContainer = document.getElementById("cartContainer");
+    if (!cartContainer) return;
 
-                    </div>
-                </div>
-            </div>
-        `;
-  }
-
-  async loadCartModal() {
-    const modal = new bootstrap.Modal(document.getElementById("cartModal"));
-    const modalBody = document.getElementById("cartModalBody");
-
-    if (Object.keys(this.cart).length === 0) {
-      modalBody.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-cart-x" style="font-size: 4rem; color: var(--text-muted);"></i>
-                    <h5 class="mt-3">Giỏ hàng trống</h5>
-                    <p class="text-muted">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-                </div>
-            `;
-    } else {
-      // Load cart items via AJAX
-      try {
-        const productIds = Object.keys(this.cart).join(",");
-        const response = await fetch(`api/cart_items.php?ids=${productIds}`);
-        const data = await response.json();
-
-        if (data.success) {
-          modalBody.innerHTML = this.renderCartContent(data.products);
-        }
-      } catch (error) {
-        modalBody.innerHTML = `
-                    <div class="text-center py-5">
-                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                        <h5 class="mt-3">Không thể tải giỏ hàng</h5>
-                    </div>
-                `;
-      }
-    }
-
-    modal.show();
-  }
-
-  renderCartContent(products) {
     let html = "";
     let total = 0;
+    let itemCount = 0;
 
     products.forEach((product) => {
-      const quantity = this.cart[product.id];
+      const quantity = this.cart[product.id] || 0;
+      if (quantity <= 0) return;
+
       const subtotal = product.price * quantity;
       total += subtotal;
+      itemCount += quantity;
 
       html += `
-                <div class="cart-item">
-                    <img src="${
-                      product.image
-                        ? `assets/uploads/${product.image}`
-                        : "assets/images/no-image.png"
-                    }" 
-                         alt="${product.name}" class="cart-item-image">
-                    <div class="cart-item-info">
-                        <div class="cart-item-name">${product.name}</div>
-                        <div class="cart-item-price">${this.formatPrice(
-                          product.price
-                        )}₫</div>
-                    </div>
-                    <div class="cart-item-controls">
-                        <div class="quantity-control">
-                            <button onclick="shopManager.updateCartQuantity(${
-                              product.id
-                            }, ${quantity - 1})">-</button>
-                            <input type="number" value="${quantity}" min="1" 
-                                   onchange="shopManager.updateCartQuantity(${
-                                     product.id
-                                   }, this.value)">
-                            <button onclick="shopManager.updateCartQuantity(${
-                              product.id
-                            }, ${quantity + 1})">+</button>
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="shopManager.removeFromCart(${
-                          product.id
-                        })">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+        <div class="card mb-3" data-product-id="${product.id}">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-2 col-3">
+                ${
+                  product.image
+                    ? `<img src="../assets/images/products/${product.image}" alt="${product.name}" class="img-fluid rounded" style="max-height: 100px; object-fit: cover;" onerror="this.outerHTML='<div class=\\'no-image rounded\\' style=\\'height:100px;\\'><i class=\\'bi bi-phone\\'></i></div>'">`
+                    : `<div class="no-image rounded" style="height:100px;"><i class="bi bi-phone"></i></div>`
+                }
+              </div>
+              <div class="col-md-4 col-9">
+                <h6 class="mb-1">${product.name}</h6>
+                <small class="text-muted">${product.category_name || ""}</small>
+                <div class="text-primary fw-bold d-md-none mt-1">${this.formatPrice(
+                  product.price
+                )}₫</div>
+              </div>
+              <div class="col-md-2 d-none d-md-block text-center">
+                <span class="text-primary fw-bold">${this.formatPrice(
+                  product.price
+                )}₫</span>
+              </div>
+              <div class="col-md-2 col-6 mt-2 mt-md-0">
+                <div class="input-group input-group-sm">
+                  <button class="btn btn-outline-secondary" type="button" onclick="shopManager.updateCartQuantity(${
+                    product.id
+                  }, ${quantity - 1})">−</button>
+                  <input type="number" class="form-control text-center" value="${quantity}" min="1" max="${
+        product.quantity || 99
+      }"
+                         onchange="shopManager.updateCartQuantity(${
+                           product.id
+                         }, this.value)">
+                  <button class="btn btn-outline-secondary" type="button" onclick="shopManager.updateCartQuantity(${
+                    product.id
+                  }, ${quantity + 1})">+</button>
                 </div>
-            `;
+                <small class="text-muted">Còn ${product.quantity || 0}</small>
+              </div>
+              <div class="col-md-2 col-6 mt-2 mt-md-0 text-end">
+                <div class="fw-bold text-success">${this.formatPrice(
+                  subtotal
+                )}₫</div>
+                <button class="btn btn-sm btn-outline-danger mt-1" onclick="shopManager.removeFromCart(${
+                  product.id
+                })">
+                  <i class="bi bi-trash"></i> Xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     });
 
-    html += `
-            <div class="cart-total mt-4 pt-4 border-top">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5>Tổng cộng:</h5>
-                    <h4 class="text-danger">${this.formatPrice(total)}₫</h4>
-                </div>
-            </div>
-        `;
+    cartContainer.innerHTML = html;
+    this.updateCartSummary(total);
 
-    return html;
+    // Update cart count text
+    const cartCountEl = document.getElementById("cartCount");
+    if (cartCountEl) {
+      cartCountEl.textContent = `${itemCount} sản phẩm trong giỏ hàng`;
+    }
+
+    // Show/hide checkout button based on cart
+    const checkoutBtn = document.getElementById("checkoutBtn");
+    if (checkoutBtn) {
+      checkoutBtn.style.pointerEvents = itemCount > 0 ? "auto" : "none";
+      checkoutBtn.style.opacity = itemCount > 0 ? "1" : "0.5";
+    }
+
+    // Free shipping notice
+    const freeShippingNotice = document.getElementById("freeShippingNotice");
+    if (freeShippingNotice) {
+      freeShippingNotice.style.display =
+        total > 0 && total < 500000 ? "block" : "none";
+      if (total > 0 && total < 500000) {
+        freeShippingNotice.innerHTML = `<small class="text-info"><i class="bi bi-info-circle me-1"></i>Mua thêm ${this.formatPrice(
+          500000 - total
+        )}₫ để được miễn phí vận chuyển</small>`;
+      }
+    }
   }
 
-  // Utility Functions
-  buyNow(productId) {
-    this.addToCart(productId);
+  updateCartSummary(total) {
+    const subtotalEl = document.getElementById("cartSubtotal");
+    const totalEl = document.getElementById("cartTotal");
+
+    if (subtotalEl) subtotalEl.textContent = this.formatPrice(total) + "₫";
+    if (totalEl) totalEl.textContent = this.formatPrice(total) + "₫";
+  }
+
+  // Buy now
+  buyNow(productId, quantity = 1) {
+    this.addToCart(productId, quantity);
     setTimeout(() => {
-      this.proceedToCheckout();
+      window.location.href = "cart.php";
     }, 500);
   }
 
   proceedToCheckout() {
-    if (!this.isLoggedIn()) {
-      this.showLoginRequired();
+    if (this.getCartCount() === 0) {
+      this.showToast("error", "Giỏ hàng trống!");
       return;
     }
-
-    // Redirect to checkout page
     window.location.href = "checkout.php";
   }
 
   async trackOrder() {
-    const orderNumber = document.getElementById("orderNumber").value;
-    const orderPhone = document.getElementById("orderPhone").value;
+    const orderNumber = document.getElementById("orderNumber")?.value;
+    const orderPhone = document.getElementById("orderPhone")?.value;
     const resultDiv = document.getElementById("orderTrackingResult");
 
     if (!orderNumber || !orderPhone) {
@@ -379,56 +317,51 @@ class ShopManager {
       return;
     }
 
-    // Show loading
-    resultDiv.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Đang tra cứu...</span>
-                </div>
-            </div>
-        `;
-    resultDiv.style.display = "block";
-
-    // Simulate API call
-    setTimeout(() => {
+    if (resultDiv) {
       resultDiv.innerHTML = `
-                <div class="alert alert-info">
-                    <h6>Đơn hàng: ${orderNumber}</h6>
-                    <p class="mb-0">Chức năng tra cứu đơn hàng đang được phát triển. Vui lòng liên hệ hotline để được hỗ trợ.</p>
-                </div>
-            `;
-    }, 1500);
-  }
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+      `;
+      resultDiv.style.display = "block";
 
-  toggleView(viewType) {
-    const productsContainer = document.querySelector(".products-container");
-    if (productsContainer) {
-      productsContainer.className = `products-container view-${viewType}`;
+      setTimeout(() => {
+        resultDiv.innerHTML = `
+          <div class="alert alert-info">
+            <h6>Đơn hàng: ${orderNumber}</h6>
+            <p class="mb-0">Chức năng tra cứu đang phát triển. Vui lòng liên hệ hotline.</p>
+          </div>
+        `;
+      }, 1000);
     }
   }
 
-  isLoggedIn() {
-    // Check if user is logged in via PHP session
-    return (
-      typeof window.userLoggedIn !== "undefined" && window.userLoggedIn === true
-    );
-  }
-
-  showLoginRequired() {
-    const modal = new bootstrap.Modal(
-      document.getElementById("loginRequiredModal")
-    );
-    modal.show();
-  }
-
   showToast(type, message) {
+    // Try to use existing toast elements
     const toastId = type === "success" ? "successToast" : "errorToast";
     const bodyId = type === "success" ? "successToastBody" : "errorToastBody";
 
-    document.getElementById(bodyId).textContent = message;
+    const toastEl = document.getElementById(toastId);
+    const bodyEl = document.getElementById(bodyId);
 
-    const toast = new bootstrap.Toast(document.getElementById(toastId));
-    toast.show();
+    if (toastEl && bodyEl) {
+      bodyEl.textContent = message;
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    } else {
+      // Fallback: create simple toast
+      const toast = document.createElement("div");
+      toast.className = `alert alert-${
+        type === "success" ? "success" : "danger"
+      } position-fixed`;
+      toast.style.cssText =
+        "top: 80px; right: 20px; z-index: 9999; min-width: 250px;";
+      toast.innerHTML = `<i class="bi bi-${
+        type === "success" ? "check-circle" : "exclamation-circle"
+      } me-2"></i>${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
   }
 
   formatPrice(price) {
@@ -436,50 +369,28 @@ class ShopManager {
   }
 }
 
-// Global functions for onclick handlers
+// Global instance
 let shopManager;
 
+// Global functions
 function addToCart(productId, quantity = 1) {
   shopManager.addToCart(productId, quantity);
 }
 
-function showProductModal(productId) {
-  shopManager.showProductModal(productId);
-}
-
-function showCartModal() {
-  shopManager.loadCartModal();
-}
-
-function showOrderTrackingModal() {
-  const modal = new bootstrap.Modal(
-    document.getElementById("orderTrackingModal")
-  );
-  modal.show();
-}
-
-function buyNow(productId) {
-  shopManager.buyNow(productId);
+function buyNow(productId, quantity = 1) {
+  shopManager.buyNow(productId, quantity);
 }
 
 function proceedToCheckout() {
   shopManager.proceedToCheckout();
 }
 
-// Initialize shop manager when DOM is loaded
+// Initialize
 document.addEventListener("DOMContentLoaded", function () {
   shopManager = new ShopManager();
 
-  // Initialize tooltips
-  const tooltipTriggerList = [].slice.call(
-    document.querySelectorAll('[data-bs-toggle="tooltip"]')
-  );
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
+  // Render cart page if on cart.php
+  if (document.getElementById("cartContainer")) {
+    shopManager.renderCartPage();
+  }
 });
-
-// Legacy function for backward compatibility
-function showLoginPrompt() {
-  shopManager.showLoginRequired();
-}

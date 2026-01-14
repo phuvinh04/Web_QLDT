@@ -1,25 +1,7 @@
 <?php
-// Shop Header Component - Flat Design
+// Shop Header Component - Using LocalStorage Cart
 if (!function_exists('env')) {
     require_once __DIR__ . '/../../config.php';
-}
-
-$cart_count = 0;
-if (isset($_SESSION['user_id'])) {
-    try {
-        $pdo_header = new PDO(
-            "mysql:host=" . env('DB_HOST', 'localhost') . ";dbname=" . env('DB_NAME', 'db_quanlydienthoai') . ";charset=utf8mb4",
-            env('DB_USER', 'root'),
-            env('DB_PASS', ''),
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-        );
-        $cart_stmt = $pdo_header->prepare("SELECT SUM(quantity) as total FROM shopping_cart WHERE user_id = ?");
-        $cart_stmt->execute([$_SESSION['user_id']]);
-        $cart_result = $cart_stmt->fetch();
-        $cart_count = $cart_result['total'] ?? 0;
-    } catch (Exception $e) {
-        $cart_count = 0;
-    }
 }
 ?>
 <nav class="navbar navbar-expand-lg shop-navbar">
@@ -68,11 +50,9 @@ if (isset($_SESSION['user_id'])) {
                     <a class="nav-link position-relative" href="cart.php">
                         <i class="bi bi-cart3"></i> 
                         <span class="d-lg-none">Giỏ hàng</span>
-                        <?php if ($cart_count > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">
-                                <?php echo $cart_count > 99 ? '99+' : $cart_count; ?>
-                            </span>
-                        <?php endif; ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge" style="font-size: 10px; display: none;">
+                            0
+                        </span>
                     </a>
                 </li>
                 
@@ -140,3 +120,18 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
 </nav>
+
+<script>
+// Update cart badge from localStorage immediately
+(function() {
+    try {
+        const cart = JSON.parse(localStorage.getItem('shop_cart') || '{}');
+        const total = Object.values(cart).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
+        const badges = document.querySelectorAll('.cart-badge');
+        badges.forEach(badge => {
+            badge.textContent = total > 99 ? '99+' : total;
+            badge.style.display = total > 0 ? 'inline' : 'none';
+        });
+    } catch(e) {}
+})();
+</script>
