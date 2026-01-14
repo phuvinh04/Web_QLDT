@@ -8,15 +8,30 @@ if (!isset($_SESSION['temp_user_id'])) {
     exit;
 }
 
+// Lấy thông tin user hiện tại
+$user_id = $_SESSION['temp_user_id'];
+$get_user = $conn->prepare("SELECT full_name, email FROM users WHERE id = ?");
+$get_user->bind_param("i", $user_id);
+$get_user->execute();
+$current_user = $get_user->get_result()->fetch_assoc();
+
 $page_title = "Thiết lập tài khoản";
 $base_url = "../";
 $errors = [];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $full_name = trim($_POST['full_name']);
     $username = trim($_POST['username']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $user_id = $_SESSION['temp_user_id'];
+    
+    // Validate họ tên
+    if (empty($full_name)) {
+        $errors['full_name'] = "Vui lòng nhập họ và tên.";
+    } elseif (strlen($full_name) > 100) {
+        $errors['full_name'] = "Họ và tên không được vượt quá 100 ký tự.";
+    }
     
     // Validate tên đăng nhập
     if (empty($username)) {
@@ -46,9 +61,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         $status = 'active';
         
-        // Nếu username rỗng trong DB (do tạo từ Google), code này sẽ update nó
-        $stmt = $conn->prepare("UPDATE users SET username = ?, password = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("sssi", $username, $hashed_password, $status, $user_id);
+        // Update username, password, full_name và status
+        $stmt = $conn->prepare("UPDATE users SET full_name = ?, username = ?, password = ?, status = ? WHERE id = ?");
+        $stmt->bind_param("ssssi", $full_name, $username, $hashed_password, $status, $user_id);
         
         if ($stmt->execute()) {
             // Lấy thông tin user để set session chính thức
@@ -113,7 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           
           <div class="auth-header">
             <h3 class="fw-bold">Hoàn tất đăng ký</h3>
-            <p class="text-muted small">Vui lòng thiết lập mật khẩu cho tài khoản Google: <br><strong><?php echo $_SESSION['temp_email']; ?></strong></p>
+            <p class="text-muted small">Vui lòng thiết lập tài khoản cho email: <br><strong><?php echo htmlspecialchars($current_user['email']); ?></strong></p>
           </div>
 
           <?php if(isset($errors['common'])): ?>
@@ -122,6 +137,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
           <form method="post" novalidate>
             
+            <div class="form-group mb-3">
+              <label>Họ và tên <span class="text-danger">*</span></label>
+              <div class="input-wrapper">
+                <input type="text" name="full_name" class="form-control <?php echo isset($errors['full_name']) ? 'is-invalid' : ''; ?>" required placeholder="Nguyễn Văn A" value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name']) : htmlspecialchars($current_user['full_name']); ?>" maxlength="100">
+                <i class="bi bi-person-badge input-icon left"></i>
+              </div>
+              <?php if(isset($errors['full_name'])): ?>
+                <div class="invalid-feedback d-block"><?php echo $errors['full_name']; ?></div>
+              <?php endif; ?>
+              <small class="text-muted">Bạn có thể thay đổi tên hiển thị từ Google</small>
+            </div>
+
             <div class="form-group mb-3">
               <label>Tên đăng nhập mong muốn <span class="text-danger">*</span></label>
               <div class="input-wrapper">
