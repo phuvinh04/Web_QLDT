@@ -33,3 +33,6 @@ desktop.ini
 cache/
 tmp/
 temp/
+
+# Documentation and development files
+_docs/
