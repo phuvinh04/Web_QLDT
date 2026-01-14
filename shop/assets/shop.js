@@ -365,8 +365,8 @@ class ShopManager {
       return;
     }
 
-    // Redirect to checkout page (to be implemented)
-    this.showToast("info", "Chức năng thanh toán đang được phát triển");
+    // Redirect to checkout page
+    window.location.href = "checkout.php";
   }
 
   async trackOrder() {

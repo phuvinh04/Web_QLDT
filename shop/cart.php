@@ -81,7 +81,7 @@ $cart_query = "
     JOIN products p ON c.product_id = p.id
     LEFT JOIN categories cat ON p.category_id = cat.id
     WHERE c.user_id = ? AND p.status = 'active'
-    ORDER BY c.added_at DESC
+    ORDER BY c.created_at DESC
 ";
 $cart_stmt = $pdo->prepare($cart_query);
 $cart_stmt->execute([$user_id]);
