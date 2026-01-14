@@ -48,9 +48,6 @@ function renderProductCard($product) {
                     <a href="product_detail.php?id=<?php echo $product_id; ?>" class="btn" title="Xem chi tiết">
                         <i class="bi bi-eye"></i>
                     </a>
-                    <button class="btn wishlist-btn" onclick="toggleWishlist(<?php echo $product_id; ?>, this)" title="Yêu thích">
-                        <i class="bi bi-heart"></i>
-                    </button>
                 </div>
             </div>
 
