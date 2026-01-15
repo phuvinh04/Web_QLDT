@@ -61,32 +61,7 @@ $GLOBALS['base_url'] = '../';
 <body>
     <?php include 'components/shop_header.php'; ?>
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <h1>Điện Thoại Chính Hãng</h1>
-                    <p class="lead">Khám phá bộ sưu tập điện thoại mới nhất với giá tốt nhất. Chất lượng đảm bảo, bảo hành chính hãng.</p>
-                    <div class="hero-buttons">
-                        <a href="products.php" class="btn btn-light btn-lg">
-                            <i class="bi bi-grid"></i> Xem sản phẩm
-                        </a>
-                        <a href="#categories" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-arrow-down"></i> Khám phá
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-6 d-none d-lg-block">
-                    <div class="hero-image">
-                        <i class="bi bi-phone" style="font-size: 10rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="container">
+    <div class="container" style="padding-top: 2rem;">
         <!-- Categories Section -->
         <section id="categories" class="categories-section">
             <h2 class="section-title">Danh Mục Sản Phẩm</h2>

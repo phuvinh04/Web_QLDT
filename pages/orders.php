@@ -37,11 +37,8 @@ $limit = 10;
 $where = ["1=1"];
 $params = [];
 
-// Nhân viên (Sales - role_id = 3) chỉ thấy đơn hàng của mình tạo
-if ($role_id == 3) {
-    $where[] = "o.user_id = ?";
-    $params[] = $_SESSION['user_id'];
-}
+// Không filter theo user_id nữa - Sales thấy tất cả đơn hàng như Admin
+// Chỉ có Customer (role_id = 5) mới bị giới hạn xem đơn của mình
 
 if (!empty($statusFilter)) {
     $where[] = "o.status = ?";
